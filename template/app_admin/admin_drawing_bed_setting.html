@@ -1,0 +1,112 @@
+{% extends 'app_admin/admin_base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}站点设置{% endblock %}
+{% block custom_element %}
+<link href="{% static 'tagsInput/tagsinput.css' %}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+{% block content %}
+<div class="layui-card">
+  <div class="layui-card-body">
+    <div class="layui-card-header" style="margin-bottom: 10px;">
+      <div class="layui-row">
+          <span style="font-size:18px;">图床配置
+          </span>
+      </div>
+    </div>
+    <div class="layui-row">
+        <div class="layui-tab">
+          <ul class="layui-tab-title">
+            <li class="layui-this">七牛云</li>
+{#            <li>邮箱设置</li>#}
+{#            <li>文档设置</li>#}
+          </ul>
+          <div class="layui-tab-content">
+              <!-- 七牛云配置 -->
+            <div class="layui-tab-item layui-show">
+               <form class="layui-form" action="{% url 'drawing_bed_setting' %}" method="post">
+                   {% csrf_token %}
+                  <input type="text" name="type" hidden value="qiniu">
+                  <!-- AK -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">设定 AccessKey</label>
+                    <div class="layui-input-block">
+                      <input name="access_key" placeholder="请输入 AccessKey" class="layui-input" value="{% if access_key != None %}{{access_key.value}}{% endif %}"/>
+                    </div>
+                  </div>
+                  <!-- SK -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">设定 SecretKey</label>
+                    <div class="layui-input-block">
+                      <input type="password" name="secret_key" placeholder="请输入 SecretKey" class="layui-input" value="{% if secret_key != None %}{{secret_key.value}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 存储空间名 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">设定存储空间名</label>
+                    <div class="layui-input-block">
+                      <input name="storage_space_name" placeholder="请输入存储空间名字（存储桶名字）" class="layui-input" value="{% if storage_space_name != None %}{{storage_space_name.value}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 访问网址 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">设定访问网址</label>
+                    <div class="layui-input-block">
+                      <input name="visit_website" placeholder="请输入访问网址（http://0.0.0.0/域名或者ip）" class="layui-input" value="{% if visit_website != None %}{{visit_website.value}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 存储区域 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">确定存储区域</label>
+                    <div class="layui-input-block">
+                      <input name="storage_area" placeholder="华东 z0,华北 z1,华南 z2,北美 na0,东南亚 as0" class="layui-input" value="{% if storage_area != None %}{{storage_area.value}}{% endif %}"></input>
+                    </div>
+                  </div>
+                    <!-- 网址后缀 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">设定网址后缀</label>
+                    <div class="layui-input-inline">
+                      <input name="url_suffix" placeholder="网址后缀" class="layui-input" value="{% if url_suffix != None %}{{url_suffix.value}}{% endif %}"></input>
+                    </div>
+                  </div>
+               <!-- 存储路劲 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">指定存储路径</label>
+                    <div class="layui-input-inline">
+                      <input name="storage_path" placeholder="存储路径" class="layui-input" value="{% if storage_path != None %}{{storage_path.value}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 默认图床开关 -->
+                   <div class="layui-form-item">
+                    <label class="layui-form-label">设为默认图床</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="default_types" lay-skin="switch" lay-text="开启|关闭"  {% if default_types.value %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项，文章默认会自动将图片上传到相应的图床</div>
+                  </div>
+
+                  <div class="layui-form-item">
+                    <div class="layui-input-block">
+                      <button class="pear-btn pear-btn-primary pear-btn-sm" lay-submit lay-filter="formDemo">保存</button>
+                    </div>
+                  </div>
+                </form>
+            </div>
+              <!-- 七牛云配置结束 -->
+
+          </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block custom_script %}
+<script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
+<script src="{% static 'layui/layui.all.js' %}"></script>
+<script src="{% static '/tagsInput/tagsinput.js' %}" type="text/javascript" charset="utf-8"></script>
+<script>
+  $.ajaxSetup({
+      data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+  });
+</script>
+{% endblock %}

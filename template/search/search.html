@@ -1,0 +1,307 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge，chrome=1">
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="Cache-Control" content="max-age=7200" />
+    <meta name="keywords" content="{% if site_keywords != None %}{{site_keywords}}{% endif %}"/>
+    <meta name="description" content="{% if site_desc != None %}{{site_desc}}{% endif %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>{{ query }} - {% trans "觅道搜索" %} - {% if site_name != None and site_name != '' %}{{ site_name }}{% endif %}</title>
+    <link href="{% static 'layui/css/layui.css' %}" rel="stylesheet">
+    <link href="{% static 'mrdoc/mrdoc.css' %}?version={{mrdoc_version}}" rel="stylesheet">
+    <link href="{% static 'mrdoc/mrdoc-search-result.css' %}?version={{mrdoc_version}}" rel="stylesheet">
+    <link rel="icon" href="{% static 'search/mrdoc_logo_300.png' %}" sizes="192x192" />
+    <style>
+    </style>
+</head>
+<body class="layui-container">
+<!-- 页头 -->
+<div class="layui-header layui-fluid">
+    <div class="" style="display:flex;flex-direction:row;justify-content:space-between;">
+        <!-- LOGO -->
+        <div class="">
+            <a class="logo" href="{% url 'search' %}">
+                <img src="{% static 'search/mrdoc_search_logo_2.svg' %}" style="height: 32px;width: auto;">
+            </a>
+        </div>
+        <!-- 搜索框 -->
+        <div style="margin:12px;" class="layui-hide-xs">
+            <form method="get" action="">
+            <div class="layui-input-inline">
+                <input class="layui-input mrdoc-search-input" 
+                    placeholder="搜索文集或文档" name="q" style="width: 500px;border-radius:5px" value="{{query}}"/>
+                <input name="type" value="{{search_type}}" hidden>
+                <button type="submit" 
+                    style="position: absolute;top:12px;right: 8px;border: none;background-color: white;">
+                    <i class="layui-icon layui-icon-search" ></i>
+                </button>
+            </div>
+            </form>
+        </div>
+        <!-- 用户菜单 -->
+        <div class="">
+            <ul class="layui-nav layui-layout-right">
+                {% if request.user.is_authenticated %}
+            <li class="layui-nav-item">
+                <a href="javascript:void(0);">
+                    <i class="layui-icon layui-icon-friends"></i> 
+                    <span class="layui-hide-xs">{% if request.user.first_name != '' %}{{request.user.first_name}}{% else %}{{request.user.username}}{% endif %}</span>
+                </a>
+                <dl class="layui-nav-child">
+                    <dd>
+                        <a href="{% url 'pro_list' %}">
+                            <i class="layui-icon layui-icon-console layui-hide-md"></i>
+                            <span class="layui-hide-xs">{% trans "返回首页" %}</span>
+                        </a>
+                    </dd>
+                    <dd class="layui-hide-md">
+                        <a href="{% url 'create_doc' %}">
+                            <i class="layui-icon layui-icon-add-1 layui-hide-md"></i>
+                        </a>
+                    </dd>
+                    <dd>
+                        <a href="{% url 'user_center' %}">
+                            <i class="layui-icon layui-icon-app layui-hide-md"></i>
+                            <span class="layui-hide-xs">{% trans "个人中心" %}</span>
+                        </a>
+                    </dd>
+                    <dd>
+                        <a href="{% url 'logout' %}">
+                            <i class="layui-icon layui-icon-release layui-hide-md"></i>
+                            <span class="layui-hide-xs">{% trans "退出登录" %}</span>
+                        </a>
+                    </dd>
+                </dl>
+            </li>
+                {% else %}
+                <li class="layui-nav-item">
+                <a href="javascript:void(0);">
+                <i class="layui-icon layui-icon-username"></i> {% trans "游客" %}
+                </a>
+                <dl class="layui-nav-child">
+                    <dd>
+                        <a href="{% url 'pro_list' %}">
+                            <i class="layui-icon layui-icon-console layui-hide-md"></i>
+                            <span class="layui-hide-xs">{% trans "首页" %}</span>
+                        </a>
+                    </dd>
+                    {% if close_register == 'on' %}
+                    <dd><a href="{% url 'login' %}">{% trans "登录" %}</a></dd>
+                    {% else %}
+                    <dd><a href="{% url 'register' %}">{% trans "注册" %}</a></dd>
+                    <dd><a href="{% url 'login' %}">{% trans "登录" %}</a></dd>
+                    {% endif %}
+                </dl>
+            </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+<!-- 页头结束 -->
+
+<!-- 小屏下的搜索框 -->
+<div class="" style="margin-top:10px;padding-left:15px;">
+    <!-- 搜索框 -->
+    <div style="margin:12px 0 12px 0;" class="layui-hide-md layui-hide-lg layui-hide-sm">
+        <form method="get" action="">
+            <div class="layui-inline">
+                <div class="layui-input-inline">
+                    <input class="layui-input mrdoc-search-input" 
+                    placeholder="搜索文集或文档" name="q" style="border-radius:5px" value="{{kw}}"/>
+                    <input name="type" value="{{search_type}}" hidden>
+                </div>
+                <div class="layui-input-inline">
+                    <button type="submit" class="layui-btn layui-btn-sm layui-btn-normal">
+                        <i class="layui-icon layui-icon-search" ></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 筛选栏 -->
+<div class="layui-container" style="margin-top: 10px;">
+    <!-- 表单风格开始 -->
+    <div class="layui-row">
+        <form class="index-control layui-form" lay-filter="filter-time-form">
+            <div class="layui-form-item">
+                <!-- 筛选开始 -->
+                <div class="layui-inline">
+                    <!-- 文档搜索 -->
+                    <div class="layui-input-inline" style="width: inherit;">
+                        <a href="?q={{query}}&type=doc&d_range={{d_range}}" class="search_type current_search_type" id="search_doc"><i class="layui-icon layui-icon-search"></i>{% trans "文档" %}</a>
+                        <a href="{% url 'search' %}?kw={{query}}&type=pro&d_range={{d_range}}" class="search_type" id="search_project"><i class="layui-icon layui-icon-list"></i>{% trans "文集" %}</a>
+                        <a href="{% url 'search' %}?kw={{query}}&type=tag&d_range={{d_range}}" class="search_type" id="search_tag"><i class="layui-icon layui-icon-note"></i>{% trans "标签" %}</a>
+                    </div>
+                </div>
+                <!-- 筛选结束 -->
+                <div class="layui-input-inline" style="float: right;">
+                    <select name="d_range" lay-verify="sel_recent" id="sel_recent">
+                        <option value="">{% trans "时间筛选" %}</option>
+                        <option value="all">{% trans "全部时间" %}</option>
+                        <option value="recent1">{% trans "近1天" %}</option>
+                        <option value="recent7">{% trans "近7天" %}</option>
+                        <option value="recent30">{% trans "近30天" %}</option>
+                        <option value="recent365">{% trans "近1年" %}</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- 表单风格结束 -->
+</div>
+
+<!-- 搜索结果提示 -->
+{% if query != '' %}
+    <div style="padding: 0 15px;margin-top: 10px;margin-bottom: 10px;color: #999;">
+        {% trans "觅道文档在" %}
+            {% if date_range == 'recent1' %}
+            {% trans "近1天内" %}
+            {% elif date_range == 'recent7' %}
+            {% trans "近7天内" %}
+            {% elif date_range == 'recent30' %}
+            {% trans "近30天内" %}
+            {% elif date_range == 'recent365' %}
+            {% trans "近一年内" %}
+            {% else %}
+            {% trans "全部时间内" %}
+            {% endif %}
+        {% trans "搜索到" %} {{ page.paginator.count }} {% trans "条结果" %}
+    </div>
+{% endif %}
+
+<!-- 主体 -->
+<div class="layui-container search_result"  style="padding: 0 20px;">
+    <!-- 遍历搜索结果列表 -->
+        {% if query %}
+            {% load doc_filter %}
+            {% load highlight %}
+            {% for result in page.object_list %}
+                <div style="margin-bottom: 18px;">
+                    <!-- 标题 -->
+                    <h3>
+                        <a href="{{ result.object.get_absolute_url }}" target="_blank" class="search_result_title">{% highlight result.object.name with query %}</a>
+                    </h3>
+                    <!-- 简介 -->
+                    {% highlight result.object.pre_content with query %}
+                    <!-- 所属文集 -->
+                    <p class="search_result_info">
+                        <a href="{% url 'pro_index' pro_id=result.object.top_doc %}" target="_blank">{{ result.object.top_doc | get_doc_top }}</a> - <span style="font-size: 14px;color: #999;">{{result.object.modify_time}}</span></p>
+                </div>
+            {% empty %}
+                <p>{% trans "没有搜索结果。" %}</p>
+            {% endfor %}
+        {% else %}
+            {# Show some example queries to run, maybe query syntax, something else? #}
+        {% endif %}
+    <!-- 文档搜索结果 -->
+</div>
+
+<!-- 主体结束 -->
+<!-- 分页 -->
+<div class="layui-row project-list-page" style="text-align: center;">
+    <div class="layui-box layui-laypage layui-laypage-default">            
+        <!-- 上一页 -->
+        {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}&q={{query}}&d_range={{date_range}}" class="layui-btn layui-btn-xs layui-btn-normal">{% trans "上一页" %}</a>
+         {% else %}
+             <a href="javascript:;" class="layui-btn layui-btn-xs layui-btn-disabled">{% trans "上一页" %}</a>
+         {% endif %}
+         <!-- 当前页 -->
+         <span class="layui-laypage-curr">
+             <em class="layui-laypage-em"></em>
+             <em>{{ page.number }}/{{ page.paginator.num_pages }}</em>
+         </span>
+         <!-- 下一页 -->
+         {% if page.has_next %}
+             <a href="?page={{ page.next_page_number }}&q={{query}}&d_range={{date_range}}" class="layui-btn layui-btn-xs layui-btn-normal">{% trans "下一页" %}</a>
+         {% else %}
+             <a class="layui-btn layui-btn-xs layui-btn-disabled">{% trans "下一页" %}</a>
+         {% endif %}
+    </div>
+</div>
+<!-- 分页结束 -->
+
+<!-- 页脚 -->
+{% include 'app_doc/foot_base.html' %}
+<!-- 页脚结束 -->
+
+<script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
+<script src="{% static 'layui/layui.all.js' %}"></script>
+{% block custom_script %}
+    <script>
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+        var layer = layui.layer;
+        var form = layui.form;
+        function positionFooter() {
+            // 获取页脚的高度
+            footerHeight = $(".layui-footer").height();
+            // 获取页脚的高度
+            // scrollTop() 设置或获取位于对象最顶端和窗口中可见内容的最顶端之间的距离
+            footerTop = ($(window).scrollTop() + $(window).height() - footerHeight - 35)+"px";
+            //如果页面内容高度小于屏幕高度，div#footer将绝对定位到屏幕底部，否则div#footer保留它的正常静态定位
+            if(($(".layui-header").height() + $(".index-control").height() + $(".project-list-content").height() + $(".project-list-page").height() + 16) < $(window).height()) {
+                console.log("页脚置底")
+                $(".layui-footer").css({ position: "absolute",left:"0" }).stop().css({top:footerTop});
+            }else{
+                $(".layui-footer").css({ position: ""})
+            }
+        };
+        $(window).bind("load", function() {
+            // 设置页脚位置
+            var footerHeight = 0;
+            var footerTop = 0;
+            positionFooter();
+            //$(window).scroll(positionFooter).resize(positionFooter);
+            //设置条件栏选中值
+            var url = layui.url();
+            // console.log(url)
+            $("#sel-role").val(url.search.role);
+            $("#sel-sort").val(url.search.sort);
+            layui.form.render('select');
+        });
+
+        // 侦听Select下拉框的选择事件
+        form.on('select()', function(data){
+            var filter_data = form.val("filter-time-form");
+            console.log(filter_data)
+            window.location.href = '?q={{query}}&d_range=' + filter_data['d_range']
+        });
+
+        // 当前搜索类型动态设置
+        tagCurrentSearchType = function(){
+            if('{{ search_type }}' == 'doc'){
+                $('#search_doc').addClass('current_search_type')
+                $('#search_project').removeClass('current_search_type')
+                $('#search_tag').removeClass('current_search_type')
+            }else if('{{ search_type }}' == 'pro'){
+                $('#search_project').addClass('current_search_type')
+                $('#search_doc').removeClass('current_search_type')
+                $('#search_tag').removeClass('current_search_type')
+            }else if('{{ search_type }}' == 'tag'){
+                $('#search_tag').addClass('current_search_type')
+                $('#search_doc').removeClass('current_search_type')
+                $('#search_project').removeClass('current_search_type')
+            }
+        }
+        tagCurrentSearchType();
+
+    </script>
+    <!-- 统计代码开始 -->
+        {% if debug %}
+        {% else %}
+            {{ static_code | safe }}
+        {% endif %}
+    <!-- 统计代码结束 -->
+{% endblock %}
+</body>
+</html>

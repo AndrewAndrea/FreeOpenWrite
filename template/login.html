@@ -1,0 +1,107 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge，chrome=1">
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="Cache-Control" content="max-age=7200" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<title>{% trans "用户登录" %} - {% if site_name != None %}{{site_name}} {% else %}{% trans "FreeOpenWrite" %}{% endif %}</title>
+	<meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="{% static 'layui/css/layui.css' %}" crossorigin="anonymous">
+    <link rel="icon" href="{% static 'search/mrdoc_logo_300.png' %}" sizes="192x192" />
+    <style>
+        body{
+            background-color: #fafafa;
+            text-align: center;
+        }
+        .container{
+            display: flex;
+            display: -webkit-flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-form{
+            margin-top: 15%;
+            padding: 20px 50px 20px 60px;
+            background-color: #fff;
+            -webkit-box-shadow: #666 0px 0px 10px;
+           -moz-box-shadow: #666 0px 0px 10px;
+           box-shadow: #666 0px 0px 10px;
+        }
+        .register-link{
+            font-size: 12px;
+        }
+        button.layui-btn-normal{
+            background-color: #2176ff !important;
+        }
+        /* 移动端输入框样式 */
+        @media screen and (max-width: 450px){
+            .layui-form-item .layui-input-inline {
+                display: block;
+                float: none;
+                left: -3px;
+                width: auto;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body background="{% static 'PearAdminLayui/admin/images/background.svg' %}">
+    <div class="container">
+        <div></div>
+        <div></div>
+        <div class="login-form">
+            <form class="layui-form" action="{% url 'login' %}"  method='POST'>
+                {% csrf_token %}
+                <div class="layui-form-item">
+                    <h2><strong>{% trans "登录" %} - <a href="/">{% if site_name != None %}{{site_name}} {% else %}{% trans "觅道文档" %}{% endif %}</a></strong></h2>
+                </div>
+                <span style='color:red;margin-bottom: 10px;'>{{ errormsg }}</span>
+                <div class="layui-form-item">
+                    <div class="layui-input-inline login-input">
+                      <input type="text" name="username" required  lay-verify="required" placeholder="请输入用户名" autocomplete="off" class="layui-input" value="{{username}}">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-inline login-input">
+                      <input type="password" name="password" required  lay-verify="required" placeholder="请输入密码" autocomplete="off" class="layui-input" value="{{pwd}}">
+                    </div>
+                </div>
+                {% if enable_login_check_code == 'on' %}
+                <div class="layui-form-item">
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="请输入验证码" name="check_code" autocomplete="off">
+                            <img src="{% url 'check_code' %}" onclick="ChangeCode(this);">
+                            <script>
+                                // 点击一次,更改图片内容,
+                                function ChangeCode(ths){
+                                    ths.src = ths.src + '?';
+                                }
+                            </script>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="layui-form-item">
+                    <div class="layui-input-inline login-input">
+                        <button class="layui-btn layui-btn-fluid layui-btn-radius  layui-btn-normal" lay-submit lay-filter="formDemo" type="submit">{% trans "登录" %}</button>
+                    </div>
+                </div>
+                {% if close_register == 'on' %}
+                {% trans "本站暂不开放注册" %}
+                {% else %}
+                <a href="{% url 'register' %}" class="register-link">{% trans "注册账号" %}</a>&nbsp;
+                {% endif %}
+                {% if enable_email == 'on' %}
+                <a href="{% url 'forget_pwd' %}" class="register-link">{% trans "忘记密码" %}</a>
+                {% endif %}
+                <a href="{% url 'pro_list' %}" class="register-link">{% trans "返回首页" %}</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

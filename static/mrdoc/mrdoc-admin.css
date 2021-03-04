@@ -1,0 +1,435 @@
+/* 用户中心 图片管理 */
+.image-list{
+    cursor: pointer;
+    position: relative;
+    display:flex;
+    float: left;
+    align-items:center;
+    width: 160px;
+    height:180px;
+    margin: 0 20px 30px 0;
+    text-align: center;
+    overflow: hidden;
+}
+
+.image-list:hover{
+    background-color: #EAFFEA;
+}
+.image-list-i{
+    display: block;
+    width: 100%;
+    height: auto;
+    -webkit-background-size: contain;
+    /*background-size: contain;*/
+    /*background-position: 50% 50%;*/
+    /*background-repeat: no-repeat;*/
+    /*padding-bottom: 100%;*/
+    border: 1px solid transparent;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.img-file-name{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    white-space:nowrap;
+    width:160px;
+    height:24px;
+    display:block;
+}
+/* 图片管理按钮 */
+.opera-img-btn{
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 160px;
+    height: 25px;
+    /* display: none; */
+    background:#393D49;
+    opacity:0.5;
+}
+.opera-img-btn i{
+    font-size:20px;
+    color:white;
+}
+.opera-img-btn i:hover{
+    color:red;
+}
+
+/* 覆盖layUI样式 */
+.layui-layout-admin .layui-body{
+    /* background-color: #f0f2f5; */
+  }
+  .layui-btn a{
+      color:white;
+  }
+  .layui-icon{
+    font-size: 14px;
+  }
+  .layui-btn{
+    border-radius: 4px;
+  }
+  .layui-btn-normal{
+    background-color: #2176ff;
+  }
+  .layui-btn-warm{
+    background-color: #ff213b;
+  }
+  .layui-btn-primary:hover{
+      border-color: #2176ff;
+      color:#2176ff;
+  }
+  /* 左侧菜单栏背景 */
+  .layui-bg-black,.layui-nav {
+      background-color: #23262e!important;
+  }
+  /* 左侧菜单栏悬浮样式 */
+  .layui-nav-tree .layui-nav-child dd.layui-this, .layui-nav-tree .layui-nav-child dd.layui-this a, .layui-nav-tree .layui-this, .layui-nav-tree .layui-this>a, .layui-nav-tree .layui-this>a:hover{
+    background-color: #2176ff !important;
+  }
+  .layui-nav-tree .layui-nav-bar{
+    background-color: #2176ff !important;
+  }
+  /* 顶部菜单栏悬浮样式 */
+  .layui-nav .layui-this:after, .layui-nav-bar, .layui-nav-tree .layui-nav-itemed:after{
+    background-color: #2176ff !important;
+  }
+
+  /* 管理文档文档状态条件筛选 管理图片图片分组筛选 */
+  .doc_status_condition > a.current{
+      color: #2176ff!important;
+  }
+  /* layui分页组件样式 */
+  .layui-laypage .layui-laypage-curr .layui-laypage-em{
+      background-color: #2176ff !important;
+  }
+  /* 设置输入框的高度 和layui-btn-sm一致 */
+  .layui-input{
+    height: 30px !important;
+  }
+  /* layui引用文本样式 */
+  .layui-elem-quote{
+    border-left: 5px solid #2176ff !important;
+  }
+  /* layui单选框样式 */
+  .layui-form-radio>i:hover, .layui-form-radioed>i{
+    color: #2176ff;
+  }
+  .layui-form-select dl dd.layui-this{
+      /* background-color: #2176ff !important; */
+  }
+  /* 开关样式 */
+  .layui-form-onswitch{
+    border-color: #2176ff;
+    background-color: #2176ff;
+  }
+  /* 多选框样式 */
+  .layui-form-checked[lay-skin=primary] i {
+        border-color: #2176ff!important;
+        background-color: #2176ff;
+        color: #fff;
+    }
+
+  /* 选项卡样式 */
+  .layui-tab-brief>.layui-tab-title .layui-this{
+    color: #2176ff;
+  }
+  .layui-tab-brief>.layui-tab-more li.layui-this:after, .layui-tab-brief>.layui-tab-title .layui-this:after{
+    border-bottom: 2px solid #2176ff !important;
+  }
+  /* 表格 */
+  table  thead  tr{
+    background-color: #e8ebf0 !important;
+  }
+  /* 弹出层按钮 */
+  .layui-layer-btn .layui-layer-btn0{
+    border-color: #2176ff !important;
+    background-color: #2176ff !important;
+  }
+  /* 分页按钮 */
+  .layui-laypage a:hover {
+    color: #2176ff !important;
+}
+/* 面包屑链接 */
+.layui-breadcrumb a:hover{
+  color: #2176ff !important;
+}
+
+/* 图标选择器 */
+.layui-iconpicker {max-width: 280px;}
+.layui-iconpicker{position:absolute;left:0;top:42px;padding:5px 0;z-index:899;min-width:250px;border:1px solid #d2d2d2;max-height:200px;overflow-y:auto;background-color:#fff;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.12);box-sizing:border-box;}
+.layui-iconpicker-item{border:1px solid #e6e6e6;width:90px;height:38px;border-radius:4px;cursor:pointer;position:relative;}
+.layui-iconpicker-icon{border-right:1px solid #e6e6e6;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;display:block;width:60px;height:100%;float:left;text-align:center;background:#fff;transition:all .3s;}
+.layui-iconpicker-icon i{line-height:38px;font-size:18px;}
+.layui-iconpicker-item > .layui-edge{left:70px;}
+.layui-iconpicker-item:hover{border-color:#D2D2D2!important;}
+.layui-iconpicker-item:hover .layui-iconpicker-icon{border-color:#D2D2D2!important;}
+.layui-iconpicker.layui-form-selected .layui-anim{display:block;}
+.layui-iconpicker-body{padding:6px;}
+.layui-iconpicker .layui-iconpicker-list{background-color:#fff;border:1px solid #ccc;border-radius:4px;}
+.layui-iconpicker .layui-iconpicker-icon-item{display:inline-block;width:21.1%;line-height:36px;text-align:center;cursor:pointer;vertical-align:top;height:36px;margin:4px;border:1px solid #ddd;border-radius:2px;transition:300ms;}
+.layui-iconpicker .layui-iconpicker-icon-item i.layui-icon{font-size:17px;}
+.layui-iconpicker .layui-iconpicker-icon-item:hover{background-color:#eee;border-color:#ccc;-webkit-box-shadow:0 0 2px #aaa,0 0 2px #fff inset;-moz-box-shadow:0 0 2px #aaa,0 0 2px #fff inset;box-shadow:0 0 2px #aaa,0 0 2px #fff inset;text-shadow:0 0 1px #fff;}
+
+.icon {
+    width: 1em; height: 1em;
+    vertical-align: -0.15em;
+    fill: currentColor;
+    overflow: hidden;
+}
+.hide-project-icon-list{
+    display: none;
+}
+
+#project-icon-select i.layui-icon{
+    margin-right: 0px;
+}
+
+/* 文字悬浮提示样式 */
+    /* tooltip样式 */
+    [tooltip] {
+      position: relative;
+  }
+
+  [tooltip]::after {
+      display: none;
+      content: attr(tooltip);
+      position: absolute;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 8px 8px;
+      max-width: 200px;
+      border-radius: 4px;
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.4);
+      z-index: 100;
+  }
+
+  [tooltip]::before {
+      display: none;
+      content: '';
+      position: absolute;
+      border: 5px solid transparent;
+      border-bottom-width: 0;
+      z-index: 100;
+  }
+
+  [tooltip]:hover::after {
+      display: block;
+  }
+
+  [tooltip]:hover::before {
+      display: block;
+  }
+
+  [tooltip][placement^="top"]::after, [tooltip][placement^="top"]::before {
+      animation: anime-top 300ms ease-out forwards;
+  }
+
+  [tooltip][placement^="right"]::after, [tooltip][placement^="right"]::before {
+      animation: anime-right 300ms ease-out forwards;
+  }
+
+  [tooltip][placement^="bottom"]::after, [tooltip][placement^="bottom"]::before {
+      animation: anime-bottom 300ms ease-out forwards;
+  }
+
+  [tooltip][placement^="left"]::after, [tooltip][placement^="left"]::before {
+      animation: anime-left 300ms ease-out forwards;
+  }
+
+  /* 气泡主题 */
+  .tooltip-theme-dark, [tooltip]::after {
+      color: #fff;
+      background-color: #313131;
+  }
+
+  .tooltip-theme-light, [tooltip][effect="light"]::after {
+      color: #313131;
+      background-color: #fff;
+      border: 1px solid #313131;
+  }
+
+  /* 气泡位置 */
+  /*----上----*/
+  .tooltip-placement-top, [tooltip]:not([placement])::after, [tooltip][placement=""]::after, [tooltip][placement="top"]::after {
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translate(-50%, 0);
+  }
+
+  .tooltip-placement-top-right, [tooltip][placement="top-right"]::after {
+      bottom: calc(100% + 10px);
+      left: 100%;
+      transform: translate(-100%, 0);
+  }
+
+  .tooltip-placement-top-left, [tooltip][placement="top-left"]::after {
+      bottom: calc(100% + 10px);
+      left: 0;
+      transform: translate(0, 0);
+  }
+
+  /*----右----*/
+  .tooltip-placement-right, [tooltip][placement="right"]::after {
+      left: calc(100% + 10px);
+      top: 50%;
+      transform: translate(0, -50%);
+  }
+
+  .tooltip-placement-right-top, [tooltip][placement="right-top"]::after {
+      left: calc(100% + 10px);
+      top: 0;
+      transform: translate(0, 0);
+  }
+
+  .tooltip-placement-right-bottom, [tooltip][placement="right-bottom"]::after {
+      left: calc(100% + 10px);
+      top: 100%;
+      transform: translate(0, -100%);
+  }
+
+  /*----下----*/
+  .tooltip-placement-bottom, [tooltip][placement="bottom"]::after {
+      top: calc(100% + 10px);
+      left: 50%;
+      transform: translate(-50%, 0);
+  }
+
+  .tooltip-placement-bottom-right, [tooltip][placement="bottom-right"]::after {
+      top: calc(100% + 10px);
+      left: 100%;
+      transform: translate(-100%, 0);
+  }
+
+  .tooltip-placement-bottom-left, [tooltip][placement="bottom-left"]::after {
+      top: calc(100% + 10px);
+      left: 0;
+      transform: translate(0, 0);
+  }
+
+  /*----左----*/
+  .tooltip-placement-left, [tooltip][placement="left"]::after {
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translate(0, -50%);
+  }
+
+  .tooltip-placement-left-top, [tooltip][placement="left-top"]::after {
+      right: calc(100% + 10px);
+      top: 0;
+      transform: translate(0, 0);
+  }
+
+  .tooltip-placement-left-bottom, [tooltip][placement="left-bottom"]::after {
+      right: calc(100% + 10px);
+      top: 100%;
+      transform: translate(0, -100%);
+  }
+
+  /* 三角形主题 */
+  .triangle-theme-dark, [tooltip]::before {
+      border-top-color: #313131;
+  }
+
+  .triangle-theme-light, [tooltip][effect="light"]::before {
+      border-top-color: #313131;
+  }
+
+  /* 三角形位置 */
+  /*----上----*/
+  .triangle-placement-top, [tooltip]:not([placement])::before, [tooltip][placement=""]::before, [tooltip][placement="top"]::before {
+      bottom: calc(100% + 5px);
+      left: 50%;
+      transform: translate(-50%, 0);
+  }
+
+  .triangle-placement-top-left, [tooltip][placement="top-left"]::before {
+      bottom: calc(100% + 5px);
+      left: 10px;
+  }
+
+  .triangle-placement-top-right, [tooltip][placement="top-right"]::before {
+      bottom: calc(100% + 5px);
+      right: 10px;
+  }
+
+  /*----右----*/
+  .triangle-placement-right, [tooltip][placement="right"]::before, .triangle-placement-right-top, [tooltip][placement="right-top"]::before, .triangle-placement-right-bottom, [tooltip][placement="right-bottom"]::before {
+      left: calc(100% + 3px);
+      top: 50%;
+      transform: translate(0, -50%) rotateZ(90deg);
+  }
+
+  .triangle-placement-right-top, [tooltip][placement="right-top"]::before {
+      top: 10px;
+  }
+
+  .triangle-placement-right-bottom, [tooltip][placement="right-bottom"]::before {
+      bottom: 10px;
+      top: auto;
+      transform: translate(0, 0) rotateZ(90deg);
+  }
+
+  /*----下----*/
+  .triangle-placement-bottom, [tooltip][placement="bottom"]::before, .triangle-placement-bottom-left, [tooltip][placement="bottom-left"]::before, .triangle-placement-bottom-right, [tooltip][placement="bottom-right"]::before {
+      top: calc(100% + 5px);
+      left: 50%;
+      transform: translate(-50%, 0) rotateZ(180deg);
+  }
+
+  .triangle-placement-bottom-left, [tooltip][placement="bottom-left"]::before {
+      transform: translate(0, 0) rotateZ(180deg);
+      left: 10px;
+  }
+
+  .triangle-placement-bottom-right, [tooltip][placement="bottom-right"]::before {
+      right: 10px;
+      left: auto;
+  }
+
+  /*----左----*/
+  .triangle-placement-left, [tooltip][placement="left"]::before, .triangle-placement-left-top, [tooltip][placement="left-top"]::before, .triangle-placement-left-bottom, [tooltip][placement="left-bottom"]::before {
+      right: calc(100% + 3px);
+      top: 50%;
+      transform: translate(0, -50%) rotateZ(270deg);
+  }
+
+  .triangle-placement-left-top, [tooltip][placement="left-top"]::before {
+      top: 10px;
+  }
+
+  .triangle-placement-left-bottom, [tooltip][placement="left-bottom"]::before {
+      bottom: 10px;
+      top: auto;
+      transform: translate(0, 0) rotateZ(270deg);
+  }
+
+  @keyframes anime-top {
+  from {
+      opacity: .5;
+      bottom: 150%;
+  }
+  }
+
+  @keyframes anime-bottom {
+  from {
+      opacity: .5;
+      top: 150%;
+  }
+  }
+
+  @keyframes anime-left {
+  from {
+      opacity: .5;
+      right: 150%;
+  }
+  }
+
+  @keyframes anime-right {
+  from {
+      opacity: .5;
+      left: 150%;
+  }
+  }

@@ -1,0 +1,57 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-siteapp">
+    <link href="{% static 'mrdoc/mrdoc-search.css' %}?version={{mrdoc_version}}" rel="stylesheet">
+    <link rel="icon" href="{% static 'search/mrdoc_logo_300.png' %}" sizes="192x192" />
+    <link rel="apple-touch-icon-precomposed" href="{% static 'search/mrdoc_logo_300.png' %}" />
+    <meta name="msapplication-TileImage" content="{% static 'search/mrdoc_logo_300.png' %}" />
+    <link rel="shortcut icon" href="{% static 'search/mrdoc_logo_300.png' %}" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="full-screen" content="yes">
+    <!--UC强制全屏-->
+    <meta name="browsermode" content="application">
+    <!--UC应用模式-->
+    <meta name="x5-fullscreen" content="true">
+    <!--QQ强制全屏-->
+    <meta name="x5-page-mode" content="app">
+    <!--QQ应用模式-->
+    <title>{% trans "觅道搜索" %}{% if site_name != None and site_name != '' %} - {{site_name}}{% endif %}</title>
+    <style>
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        <div class="con">
+            <div class="shlogo"></div>
+            <div class="sou">
+                <form action="{% url 'doc_search' %}" method="get" target="_self">
+                    <input class="wd" type="text" placeholder="请输入搜索内容" name="q" x-webkit-speech lang="zh-CN">
+                    <!-- <input name="type" value="doc" hidden> -->
+                    <input name="d_range" value="all" hidden>
+                    <button type="submit" style="background-image: url(/static/search/search_btn.svg);"></button>
+                </form>
+                <ul>
+                    <li><a href="/"><i style="background-image: url(/static/search/home_btn.svg);"></i>{% trans "返回首页" %}</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="foot">© 2019-2021 by <a href="http://www.andrewblog.cn/">裸睡的鱼</a> . All rights reserved.</div>
+    </div>
+    <!--
+作者:D.Young
+主页：https://yyv.me/
+github：https://github.com/5iux/sou
+日期：20200324
+版权所有，请勿删除
+-->
+</body>
+
+</html>

@@ -1,0 +1,201 @@
+{% extends 'app_admin/admin_base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}发布平台管理{% endblock %}
+{% block content %}
+<div class="layui-card">
+    <div class="layui-card-body">
+        <div class="layui-card-header" style="margin-bottom: 10px;">
+        <div class="layui-row">
+            <span style="font-size:18px;">发布平台管理
+            </span>
+        </div>
+        </div>
+        <div class="layui-row">
+            <form action="{% url 'admin_plant_manage' %}" method="get">
+            <div class="layui-form-item">
+                <!--<div class="layui-input-inline">-->
+                    <!--<input type="text" name="kw" id="kw" placeholder="输入文集内容" autocomplete="off" class="layui-input">-->
+                <!--</div>-->
+                <!--<button class="layui-btn layui-btn-normal" type="submit">搜索</button>-->
+                <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="createRegisterCode()" type="button"><i class="layui-icon layui-icon-addition"></i>新增发布平台</button>
+
+            </div>
+            </form>
+        </div>
+        <div class="layui-row" lay-skin="line">
+            <table class="layui-table"  id="register-code-list" lay-skin="nob">
+                <colgroup>
+                    <col width="150">
+                    <col width="100">
+                    <col width="120">
+                    <col width="120">
+                    <col width="80">
+                    <col width="400">
+                </colgroup>
+        <thead>
+            <tr>
+                <th>平台id</th>
+                <th>平台名称</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for code in codes %}
+            <tr>
+            <td>{{ code.plant_code }}</td>
+            <td>{{ code.plant_name }}</td>
+            <td>
+                {% if code.status == 1 %}
+                <i class="layui-icon layui-icon-ok-circle" style="color:#1E9FFF;"></i> 可用
+                {% elif code.status == 0 %}
+                <i class="layui-icon layui-icon-close-fill" style="color: #FF5722;"></i> 不可用
+                {% endif %}
+            </td>
+            <td>{{ code.create_time }}</td>
+            <td>
+                <form class="layui-form">
+                <a href="javascript:void(0);" onclick="updatePlat('{{code.id}}', '{{code.status}}')">
+
+                    {% if code.status == 1 %}
+                    <input type="checkbox" id="status_plant" name="yyy" lay-skin="switch" lay-text="ON|OFF" value="on" checked>
+                    {% elif code.status == 0 %}
+                    <input type="checkbox" id="status_plant" name="yyy" lay-skin="switch" lay-text="ON|OFF" value="off">
+                    {% endif %}
+                    <a href="javascript:void(0);" onclick="delPlant('{{code.id}}')">
+                    <i class="layui-icon layui-icon-delete"></i>删除
+                        </a>
+                </a>
+
+                    </form>
+            </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+            </table>
+        </div>
+        <!-- 分页 -->
+        <div class="layui-row">
+            <div class="pagination">
+                <span class="step-links">
+                    {% if codes.has_previous %}
+                        <a href="?page={{ codes.previous_page_number }}&kw={{codes.kw}}" class="layui-btn layui-btn-normal layui-btn-xs">上一页</a>
+                    {% endif %}
+                    <span class="current">
+                        当前页： {{ codes.number }} 共 {{ codes.paginator.num_pages }} 页
+                    </span>
+                    {% if codes.has_next %}
+                        <a href="?page={{ projects.next_page_number }}&kw={{projects.kw}}" class="layui-btn layui-btn-xs">下一页</a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block custom_script %}
+<script>
+    layui.use(['table','jquery','form','layer','element'], function() {
+        let table = layui.table;
+        let form = layui.form;
+        let $ = layui.jquery;
+        let layer = layui.layer;
+        let element = layui.element;
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+        //新增注册码
+        createRegisterCode = function(){
+            layer.open({
+                type:1,
+                title:'新增平台',
+                area:'300px;',
+                id:'createRegCode',//配置ID
+                content:'<div style="margin:10px;"><input class="layui-input" id="regCodeCnt" type="text" placeholder="输入平台名称"/></div>',
+                btn:['确定','取消'], //添加按钮
+                btnAlign:'c', //按钮居中
+                yes:function (index,layero) {
+                    layer.load(1);
+                    data = {
+                        'types':1,
+                        'plant_name':$("#regCodeCnt").val(),
+                    }
+                    $.post("{% url 'admin_plant_manage' %}",data,function(r){
+                        layer.closeAll('loading');
+                        if(r.status){
+                            //新增成功，刷新页面
+                            window.location.reload();
+                            //layer.close(index)
+                        }else{
+                            //新增失败，提示
+                            console.log(r)
+                            layer.msg(r.data)
+                        }
+                    })
+                },
+            });
+        }
+        //更新状态
+        updatePlat = function(code_id, status){
+            layer.open({
+                type:1,
+                title:'更新状态',
+                area:'300px;',
+                id:'delRegCode',//配置ID
+                content:'<div style="margin-left:10px;">是否确认修改！</div>',
+                btn:['确定','取消'], //添加按钮
+                btnAlign:'c', //按钮居中
+                yes:function (index,layero) {
+                    data = {
+                        'types':2,
+                        'code_id':code_id,
+                        'status':status,
+                    }
+                    $.post("{% url 'admin_plant_manage' %}",data,function(r){
+                        if(r.status){
+                            //删除成功，刷新页面
+                            window.location.reload();
+                            //layer.close(index)
+                        }else{
+                            //删除失败，提示
+                            console.log(r)
+                            layer.msg(r.data)
+                        }
+                    })
+                },
+            });
+        }
+        delPlant = function(code_id){
+            layer.open({
+                type:1,
+                title:'删除平台',
+                area:'300px;',
+                id:'delRegCode',//配置ID
+                content:'<div style="margin-left:10px;">警告：此操作将删除此平台！</div>',
+                btn:['确定','取消'], //添加按钮
+                btnAlign:'c', //按钮居中
+                yes:function (index,layero) {
+                    data = {
+                        'types':3,
+                        'code_id':code_id,
+                    }
+                    $.post("{% url 'admin_plant_manage' %}",data,function(r){
+                        if(r.status){
+                            //删除成功，刷新页面
+                            window.location.reload();
+                            //layer.close(index)
+                        }else{
+                            //删除失败，提示
+                            console.log(r)
+                            layer.msg(r.data)
+                        }
+                    })
+                },
+            });
+        }
+    })
+</script>
+{% endblock %}

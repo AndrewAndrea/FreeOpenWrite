@@ -1,0 +1,299 @@
+{% extends 'app_admin/admin_base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}站点设置{% endblock %}
+{% block custom_element %}
+<link href="{% static 'tagsInput/tagsinput.css' %}" rel="stylesheet" type="text/css"/>
+{% endblock %}
+{% block content %}
+<div class="layui-card">
+  <div class="layui-card-body">
+    <div class="layui-card-header" style="margin-bottom: 10px;">
+      <div class="layui-row">
+          <span style="font-size:18px;">站点设置
+          </span>
+      </div>
+    </div>
+    <div class="layui-row">
+        <div class="layui-tab">
+          <ul class="layui-tab-title">
+            <li class="layui-this">基础设置</li>
+            <li>邮箱设置</li>
+            <li>文档设置</li>
+          </ul>
+          <div class="layui-tab-content">
+              <!-- 网站设置 -->
+            <div class="layui-tab-item layui-show">
+               <form class="layui-form" action="{% url 'sys_setting' %}" method="post">
+                   {% csrf_token %}
+                  <input type="text" name="type" hidden value="basic">
+                  <!-- 站点名称 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">站点名称</label>
+                    <div class="layui-input-inline">
+                      <input name="site_name" placeholder="请输入站点标题" class="layui-input" value="{% if site_name != None %}{{site_name}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 站点子标题 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">子标题</label>
+                    <div class="layui-input-block">
+                      <input name="site_sub_name" placeholder="请输入站点的子标题" class="layui-input" value="{% if site_sub_name != None %}{{site_sub_name}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 站点关键词 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-block">
+                      <input name="site_keywords" placeholder="多个关键词请使用使用英文逗号,进行分隔" class="layui-input" value="{% if site_keywords != None %}{{site_keywords}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 站点描述 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">站点描述</label>
+                    <div class="layui-input-block">
+                      <input name="site_desc" placeholder="请用简短的文字描述你的MrDoc站点" class="layui-input" value="{% if site_desc != None %}{{site_desc}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <!-- 备案号 -->
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">备案号</label>
+                    <div class="layui-input-inline">
+                      <input name="beian_code" placeholder="请输入网站的备案号" class="layui-input" value="{% if beian_code != None %}{{beian_code}}{% endif %}"></input>
+                    </div>
+                  </div>
+                  <hr>
+                  <!-- 首页文集排序 -->
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">首页排序</label>
+                    <div class="layui-input-inline">
+                      {% if index_project_sort == '-1' %}
+                      <input type="radio" name="index_project_sort" value="1" title="升序" >
+                      <input type="radio" name="index_project_sort" value="-1" title="降序" checked>
+                      {% else %}
+                      <input type="radio" name="index_project_sort" value="1" title="升序" checked>
+                      <input type="radio" name="index_project_sort" value="-1" title="降序" >
+                      {% endif %}
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">首页文集列表的排序方式</div>
+                  </div>
+                  <!-- 站点注册开关 -->
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">禁止注册</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="close_register" lay-skin="switch" lay-text="开启|关闭"  {% if close_register %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项将禁止新用户注册</div>
+                  </div>
+                  <!-- 站点强制登录开关 -->
+                   <div class="layui-form-item">
+                    <label class="layui-form-label">全站登录</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="require_login" lay-skin="switch" lay-text="开启|关闭"  {% if require_login %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项，除注册、登录页面外的所有页面的访问都需要登录</div>
+                  </div>
+                  <!-- 站点注册码开关 -->
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">启用注册码</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="enable_register_code" lay-skin="switch" lay-text="开启|关闭"  {% if enable_register_code %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项，新用户注册将需要填写注册码</div>
+                  </div>
+                  <!-- 登录验证码开关 -->
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">登录验证码</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="enable_login_check_code" lay-skin="switch" lay-text="开启|关闭"  {% if enable_login_check_code %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项，登录将需要填写验证码</div>
+                  </div>
+                  
+                  <!-- 文集导出开关 -->
+                   <div class="layui-form-item">
+                    <label class="layui-form-label">文集下载</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="enable_project_report" lay-skin="switch" lay-text="开启|关闭"  {% if enable_project_report %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项，文集允许导出为EPUB和DOCX等格式文件以供下载，文集拥有者可进行进一步控制特定文集是否开放导出</div>
+                  </div>
+                  <!-- 邮箱开关 -->
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">启用邮箱</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="enable_email" lay-skin="switch" lay-text="开启|关闭"  {% if enable_email %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启此选项后还需进行邮箱信息配置</div>
+                  </div>
+                  <!-- 图片缩略开关 -->
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">图片缩略</label>
+                    <div class="layui-input-inline">
+                      <input type="checkbox" name="img_scale" lay-skin="switch" lay-text="开启|关闭"  {% if img_scale %}checked{% endif %}>
+                    </div>
+                    <div class="layui-form-mid layui-word-aux">开启后文档中的图片将显示为最大宽度350px的缩略图</div>
+                  </div>
+                  <hr>
+
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">统计代码</label>
+                    <div class="layui-input-block">
+                      <textarea name="static_code" placeholder="如果需要调用第三方的统计功能，请将第三方统计工具代码输入至此，可以包含<script>标签" class="layui-textarea">{{static_code}}</textarea>
+                    </div>
+                  </div>
+
+                   <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">广告位1</label>
+                    <div class="layui-input-block">
+                      <textarea name="ad_code" placeholder="如果需要在文档正文上方添加广告，请将广告相关代码输入至此，可以包含<script>标签" class="layui-textarea">{{ad_code}}</textarea>
+                    </div>
+                  </div>
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">广告位2</label>
+                    <div class="layui-input-block">
+                      <textarea name="ad_code_2" placeholder="此广告位位于文档下方、分享按钮上方，可以包含<script>标签" class="layui-textarea">{{ad_code_2}}</textarea>
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">广告位3</label>
+                    <div class="layui-input-block">
+                      <textarea name="ad_code_3" placeholder="此广告位位于文档左侧目录栏下方，可以包含<script>标签" class="layui-textarea">{{ad_code_3}}</textarea>
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item">
+                    <div class="layui-input-block">
+                      <button class="pear-btn pear-btn-primary pear-btn-sm" lay-submit lay-filter="formDemo">保存</button>
+                    </div>
+                  </div>
+                </form>
+            </div>
+              <!-- 网站设置结束 -->
+
+              <!-- 邮箱设置 -->
+            <div class="layui-tab-item">
+                <form class="layui-form" action="" method="post">
+                   {% csrf_token %}
+                    <input type="text" name="type" hidden value="email">
+                  <div class="layui-form-item">
+                    <label class="layui-form-label">发件邮箱</label>
+                    <div class="layui-input-block">
+                      <input type="email" name="send_emailer" class="layui-input" required value="{{emailer.value}}">
+                    </div>
+                  </div>
+
+                   <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">SMTP 主机</label>
+                    <div class="layui-input-block">
+                      <input type="text" name="smtp_host" class="layui-input" required value="{{email_host.value}}">
+                    </div>
+                  </div>
+
+                    <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">SMTP 端口</label>
+                    <div class="layui-input-block">
+                      <input type="number" name="smtp_port" class="layui-input" required value="{{email_port.value}}">
+                    </div>
+                  </div>
+
+                   <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">SMTP 用户名</label>
+                    <div class="layui-input-block">
+                      <input type="text" name="smtp_username" class="layui-input" required value="{{email_username.value}}">
+                    </div>
+                  </div>
+
+                    <div class="layui-form-item layui-form-text">
+                    <label class="layui-form-label">SMTP 密码</label>
+                    <div class="layui-input-block">
+                      <input type="password" name="smtp_pwd" class="layui-input" required value="{{email_pwd.value}}">
+                    </div>
+                  </div>
+
+                    <div class="layui-form-item">
+                    <label class="layui-form-label">使用SSL</label>
+                    <div class="layui-input-block">
+                      <input type="checkbox" name="smtp_ssl" lay-skin="switch" lay-text="开启|关闭"  {% if email_ssl.value %}checked{% endif %}>
+                    </div>
+                  </div>
+
+                  <div class="layui-form-item">
+                    <div class="layui-input-block">
+                      <button class="pear-btn pear-btn-primary pear-btn-sm" lay-submit lay-filter="formDemo">保存邮箱设置</button>
+                    </div>
+                  </div>
+                </form>
+            </div>
+              <!-- 邮箱设置结束 -->
+
+              <!-- 全局文档设置 -->
+            <div class="layui-tab-item">
+              <form action="" method="post" class="layui-form">
+                {% csrf_token %}
+                <input type="text" name="type" hidden value="doc">
+                <div class="layui-form-item" style="" id="role-user">
+                    <label class="layui-form-label">ifrme白名单</label>
+                    <div class="layui-input-inline">
+                        <div class="tagsinput-primary form-group">
+                            <input name="iframe_whitelist" id="iframe_whitelist" class="tagsinput" data-role="tagsinput" value="{% if iframe_whitelist != '' %}{{iframe_whitelist}}{% endif %}" placeholder="请输入域名">
+                        </div>
+                    <div class="layui-form-mid layui-word-aux">默认支持YouTube、优酷、QQ视频、Facebook、哔哩哔哩、TED网站，仅用于EditorMD编辑器模式</div>
+                </div>
+                </div>
+
+                <div class="layui-form-item" style="" id="role-user">
+                  <label class="layui-form-label">图片大小</label>
+                  <div class="layui-input-inline">
+                      <div class="tagsinput-primary form-group">
+                          <input class="layui-input" type="number" name="img_size" id="img_size" value="{% if img_size != '' %}{{img_size}}{% endif %}" placeholder="">
+                      </div>
+                  </div>
+                  <div class="layui-form-mid layui-word-aux">默认限制图片大小10MB，单位MB</div>
+                </div>
+
+                <div class="layui-form-item" style="" id="role-user">
+                  <label class="layui-form-label">附件格式</label>
+                  <div class="layui-input-inline">
+                      <div class="tagsinput-primary form-group">
+                          <input name="attachment_suffix" id="attachment_suffix" class="tagsinput" data-role="tagsinput" value="{% if attachment_suffix != '' %}{{attachment_suffix}}{% endif %}" placeholder="不带.号的格式后缀">
+                      </div>
+                  </div>
+                  <div class="layui-form-mid layui-word-aux">默认支持.zip文件格式</div>
+                </div>
+
+                <div class="layui-form-item" style="" id="role-user">
+                  <label class="layui-form-label">附件大小</label>
+                  <div class="layui-input-inline">
+                      <div class="tagsinput-primary form-group">
+                          <input class="layui-input" type="number" name="attachment_size" id="attachment_size" value="{% if attachment_size != '' %}{{attachment_size}}{% endif %}" placeholder="">
+                      </div>
+                  </div>
+                  <div class="layui-form-mid layui-word-aux">默认限制附件文件大小50MB，单位MB</div>
+                </div>
+    
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                      <button class="pear-btn pear-btn-primary pear-btn-sm" lay-submit lay-filter="formDemo">保存文档配置</button>
+                    </div>
+                </div>
+            </form>
+            </div>
+              <!-- 全局文档设置结束 -->
+          </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block custom_script %}
+<script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
+<script src="{% static 'layui/layui.all.js' %}"></script>
+<script src="{% static '/tagsInput/tagsinput.js' %}" type="text/javascript" charset="utf-8"></script>
+<script>
+  $.ajaxSetup({
+      data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+  });
+</script>
+{% endblock %}

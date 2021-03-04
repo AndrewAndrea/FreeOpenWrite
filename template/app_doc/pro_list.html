@@ -1,0 +1,461 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge，chrome=1">
+    <meta http-equiv="Cache-Control" content="no-transform" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta http-equiv="Cache-Control" content="max-age=7200" />
+    <meta name="keywords" content="{% if site_keywords != None %}{{site_keywords}}{% endif %}"/>
+    <meta name="description" content="{% if site_desc != None %}{{site_desc}}{% endif %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>{% if site_name != None and site_name != '' %}{{site_name}} {% else %}{% trans "站点标题" %}{% endif %} - {% if site_sub_name != None %}{{site_sub_name}} {% else %}{% trans "文档分发平台" %}{% endif %}</title>
+    <link href="{% static 'layui/css/layui.css' %}" rel="stylesheet">
+    <link href="{% static 'mrdoc/mrdoc.css' %}?version={{mrdoc_version}}" rel="stylesheet">
+    <link href="{% static 'iconFont/iconfont.css' %}?version={{mrdoc_version}}" rel="stylesheet">
+    <link rel="icon" href="{% static 'search/mrdoc_logo_300.png' %}" sizes="192x192" />
+    <style>
+        .layui-nav .layui-this:after, .layui-nav-bar, .layui-nav-tree, .layui-nav-itemed:after {
+            background-color: #333 !important;
+        }
+        .layui-nav .layui-nav-child dd.layui-this a, .layui-nav-child dd.layui-this{
+            background-color: #333 !important;
+        }
+        /* layui分页组件样式 */
+        .layui-laypage .layui-laypage-curr .layui-laypage-em{
+            background-color: #333 !important;
+        }
+        .layui-form-label{
+            width: 30px !important;
+        }
+        .layui-input-block{
+            margin-left: 60px !important;
+        }
+        /* 控制栏表单下拉框样式 */
+        .index-control .layui-input-inline{
+                width: 100px;
+        }
+        .index-control .layui-input{
+            height: 25px;
+            border: none;
+        }
+        .index-control .layui-form-select dl {
+            top: 30px;
+        }
+        .index-control .layui-form-item{
+            margin-bottom: 0px;
+        }
+        /* 文集列表样式 */
+        .project-item-list{
+            /* float: left; */
+            min-width: 0;
+            width: 100vw;
+            height: 120px;
+            /* margin-top: 20px; */
+            /* margin-left: 20px; */
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.055);
+        }
+        /* 移动端筛选控制栏样式 */
+        @media screen and (max-width: 768px){
+            /* 控制栏样式 */
+            .index-control .layui-form-item .layui-inline{
+                display: -webkit-inline-box;
+            }
+            .index-control .layui-form-item .layui-input-inline{
+                display: -webkit-inline-box;
+                float: none;
+                left: -3px;
+                /* width: auto; */
+                margin: 0;
+            }
+
+        }
+
+    </style>
+</head>
+<body class="layui-container">
+<!-- 页头 -->
+{% include 'app_doc/head_base.html' %}
+<!-- 页头结束 -->
+
+<!-- 筛选栏 -->
+<div class="layui-container" style="margin-top: 10px;">
+    <!-- 表单风格开始 -->
+    <div class="layui-row">
+        <form class="index-control layui-form" style="float: right;" lay-filter="filter-project-form">
+            <div class="layui-form-item">
+                <!-- 筛选开始 -->
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <select name="role" lay-verify="" id="sel-role">
+                            <option value="">{% trans "筛选" %}</option>
+                            {% if request.user.is_authenticated %}
+                            <option value="0">{% trans "公开文集" %}</option>
+                            <option value="1">{% trans "私密文集" %}</option>
+                            <option value="99">{% trans "协作文集" %}</option>
+                            <option value="3">{% trans "访问码文集" %}</option>
+                            {% else %}
+                            <option value="0">{% trans "公开文集" %}</option>
+                            <option value="3">{% trans "访问码文集" %}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="layui-input-inline">
+                        <select name="sort" lay-verify="" id="sel-sort">
+                            <option value="">{% trans "排序" %}</option>
+                            <option value="0" {% if sort == 0 %} checked {% endif %}>{% trans "时间升序" %}</option>
+                            <option value="1" {% if sort == 1 %} checked {% endif %}>{% trans "时间降序" %}</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- 筛选结束 -->
+            </div>
+        </form>
+    </div>
+    <!-- 表单风格结束 -->
+</div>
+
+<!-- 主体 -->
+<div class="layui-container project-list-content" style="display:flex;flex-wrap:wrap;">
+    <!-- 遍历文集列表 -->
+    {% load project_filter %}
+    {% for p in projects %}
+        <!-- 网格布局 -->
+        <div class="layui-col-md3 layui-col-xs12 project-item">
+            <a href="{% url 'pro_index' p.id %}" target="_blank">
+                <div class="layui-card">
+                    <div class="layui-card-header" 
+                        {% if p.role == 1 %}
+                        style="background: url({% static 'icon_img/simi.svg' %}) no-repeat right bottom;"
+                        {% endif %}
+                        >
+                        {% if p.icon %}
+                            <p class="layui-elip" style="font-weight: 700;">
+                                {% if p.is_top %}<i class="iconfont mrdoc-icon-totop" title="置顶文集" style="color: red;font-size: 12px;"></i>{% endif %}
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#{{p.icon}}"></use></svg> {{ p.name }}&nbsp;&nbsp;<span class="layui-badge-rim">{{p.id|get_doc_count}}</span>
+                            </p>
+                        {% else %}
+                            <p class="layui-elip" style="font-weight: 700;">
+                                {% if p.is_top %}<i class="iconfont mrdoc-icon-totop" title="置顶文集" style="color: red;font-size: 12px;"></i>{% endif %}
+                                <svg class="icon" aria-hidden="true"><use xlink:href="#mrdoc-icon-pro-2"></use></svg> {{ p.name }}&nbsp;&nbsp;<span class="layui-badge-rim">{{p.id|get_doc_count}}</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="layui-card-body" style="font-size: 12px;">
+                      <p class="tooltip layui-word-aux">
+                        <i class="layui-icon layui-icon-speaker"></i>
+                        {% if p.intro == "" %}
+                        <span class="">{% trans "此文集没有填写简介" %}</span>
+                        {% else %}
+                        <span class="">{{ p.intro | slice:'20' }}…</span>
+                        <span class="tooltip-content clearfix">{{ p.intro }}</span>
+                        {% endif %}
+                      </p>
+                      {% for new_doc in p.id|get_new_doc %}
+                        <p class="layui-word-aux" style="line-height: 18px;">
+                          <a href="{% url 'doc' new_doc.top_doc new_doc.id %}" target="_blank" class="index-doc-link"><span class="layui-elip" style="display: inline-block;;width: 250px;"><i class="layui-icon layui-icon-form"></i> {{new_doc.name}}</span></a>
+                          <span style="float: right;">{{new_doc.modify_time|date:"n-d"}}</span>
+                        </p>
+                      {% endfor %}
+                      
+                    </div>
+                </div>
+            </a>
+        </div>
+        <!-- 网格布局结束 -->
+    {% endfor %}
+    {% if project_list.count == 0 %}
+<div>
+    <img src="{% static 'non_doc.png' %}" style="width: 100%;height:auto;">
+</div>
+{% endif %}
+</div>
+
+<!-- 主体结束 -->
+<!-- 分页 -->
+<div class="layui-row project-list-page" style="text-align: center;">
+    <div class="layui-box layui-laypage layui-laypage-default">
+            <!-- 上一页 -->
+            {% if projects.has_previous %}
+                <a href="?page={{ projects.previous_page_number }}&kw={{kw}}&sort={{sort}}&role={{role}}" class="layui-btn layui-btn-xs layui-btn-normal">{% trans "上一页" %}</a>
+            {% else %}
+                <a href="javascript:;" class="layui-btn layui-btn-xs layui-btn-disabled">{% trans "上一页" %}</a>
+            {% endif %}
+            <!-- 当前页 -->
+            <span class="layui-laypage-curr">
+                <em class="layui-laypage-em"></em>
+                <em>{{ projects.number }}/{{ projects.paginator.num_pages }}</em>
+            </span>
+            <!-- 下一页 -->
+            {% if projects.has_next %}
+                <a href="?page={{ projects.next_page_number }}&kw={{kw}}&sort={{sort}}&role={{role}}" class="layui-btn layui-btn-xs layui-btn-normal">{% trans "下一页" %}</a>
+            {% else %}
+                <a class="layui-btn layui-btn-xs layui-btn-disabled">{% trans "下一页" %}</a>
+            {% endif %}
+    </div>
+</div>
+<!-- 分页结束 -->
+
+<!-- 页脚 -->
+{% include 'app_doc/foot_base.html' %}
+<!-- 页脚结束 -->
+
+<!-- 新建文集div块 -->
+<div style="padding: 20px;display:none;" id="create-project-div">
+    <div class="layui-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">图标</label>
+            <div class="layui-input-block">
+                <button class="layui-btn layui-btn-primary layui-btn-sm" id="project-icon-select">
+                    <i class="layui-icon layui-icon-addition"></i>
+                </button>
+                <input type="hidden" name="picon" id="picon" />
+                <div class="layui-anim layui-anim-upbit layui-iconpicker hide-project-icon-list" id="project-icon-select-box">
+                    <div class="layui-iconpicker-list" id="mrdoc-project-icon-list">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">名称</label>
+            <div class="layui-input-block">
+                <input class="layui-input" type="text" id="pname" style="margin-bottom:10px;" placeholder="输入文集名" required  lay-verify="required">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">简介</label>
+            <div class="layui-input-block">
+                <textarea name="desc" id="desc" placeholder="输入文集简介，不超过100个字，超出将被截断"  maxlength="100" class="layui-textarea"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">权限</label>
+            <div class="layui-input-block">
+                <input type="radio" name="project-role" value="0" title="公开" checked>
+                <input type="radio" name="project-role" value="1" title="私密">
+            </div>
+        </div>
+        <div style="color:red;font-size:12px;">{% trans "*在可个人中心对文集权限进行进一步控制" %}</div>
+    </div>
+    
+</div>
+<!-- 结束新建文集div块 -->
+
+<script src="{% static 'iconFont/iconfont.js' %}"></script>
+<script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
+<script src="{% static 'layui/layui.all.js' %}"></script>
+{% block custom_script %}
+    <script>
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+        var layer = layui.layer;
+        var form = layui.form;
+        function positionFooter() {
+            // 获取页脚的高度
+            footerHeight = $(".layui-footer").height();
+            // 获取页脚的高度
+            footerTop = ($(window).scrollTop() + $(window).height() - footerHeight - 20)+"px";
+            // console.log("页脚高度：",footerHeight)
+            // console.log(footerTop)
+            // console.log($(".layui-header").height()+$(".layui-container").height())
+            // console.log("窗口高度：",$(window).height())
+            //如果页面内容高度小于屏幕高度，div#footer将绝对定位到屏幕底部，否则div#footer保留它的正常静态定位
+            if(($(".layui-header").height() + $(".index-control").height() + $(".project-list-content").height() + $(".project-list-page").height() + 16) < $(window).height()) {
+                console.log("页脚置底")
+                $(".layui-footer").css({ position: "absolute",left:"0" }).stop().css({top:footerTop});
+            }else{
+                $(".layui-footer").css({ position: ""})
+            }
+        };
+        $(window).bind("load", function() {
+            // 设置页脚位置
+            var footerHeight = 0;
+            var footerTop = 0;
+            positionFooter();
+            //$(window).scroll(positionFooter).resize(positionFooter);
+            //设置条件栏选中值
+            var url = layui.url();
+            // console.log(url)
+            $("#sel-role").val(url.search.role);
+            $("#sel-sort").val(url.search.sort);
+            layui.form.render('select');
+        });
+
+        // 侦听Select下拉框的选择事件
+        form.on('select()', function(data){
+            var filter_data = form.val("filter-project-form");
+            console.log(filter_data)
+            window.location.href = '/?sort=' + filter_data['sort'] + '&role=' + filter_data['role'] + '&kw={{kw}}' 
+        });
+        
+        // 动态生成文集图标列表
+        for(var i=1;i<44;i++){
+            var icon_elem = '<div class="layui-iconpicker-icon-item" style="width:20%" data-icon="mrdoc-icon-pro-'+ i +'"><svg class="icon" aria-hidden="true"><use xlink:href="#mrdoc-icon-pro-'+ i +'"></use></svg></div>'
+            $("#mrdoc-project-icon-list").append(icon_elem)
+        }
+        // 点击图标选择按钮
+        $("#project-icon-select").click(function(){
+            $("#project-icon-select-box").toggleClass("hide-project-icon-list")
+        });
+        // 选中图标
+        $(".layui-iconpicker-icon-item").click(function(e){
+            var selected_icon = e.currentTarget.dataset.icon;
+            var selected_icon_svg = '<svg class="icon" aria-hidden="true"><use xlink:href="#'+ selected_icon +'"></use></svg>' 
+            console.log(selected_icon)
+            $("#project-icon-select").html(selected_icon_svg);
+            $("#picon").val(selected_icon);
+            $("#project-icon-select-box").toggleClass("hide-project-icon-list");
+        })
+        
+    </script>
+    <script>
+        //创建新文集
+        createPro = function () {
+            layer.open({
+                type:1,
+                title:'{% trans "新建文集" %}',
+                area:'400px;',
+                id:'createPro',//配置ID
+                content: $('#create-project-div'),
+                btn:['{% trans "确定" %}','{% trans "创建并添加文档" %}','{% trans "取消" %}'], //添加按钮
+                btnAlign:'c', //按钮居中
+                sucess:function(){
+                    form.render();
+                },
+                yes:function (index,layero) {
+                    layer.load(1)
+                    data = {
+                        'picon':$("#picon").val(),
+                        'pname':$("#pname").val(),
+                        'desc':$("#desc").val(),
+                        'role':$("input[name=project-role]:checked").val(),
+                    }
+                    $.ajax({
+                        url:"{% url 'create_project' %}",
+                        type:'post',
+                        data:data,
+                        success:function(r){
+                            if(r.status){
+                                window.location.reload();
+                            }else{
+                                //创建失败，提示
+                                console.log(r)
+                                layer.closeAll('loading')
+                                layer.msg(r.data)
+                            }
+                        },
+                        error:function(){
+                            layer.closeAll('loading')
+                            layer.msg("创建异常")
+                        }
+                    })
+                },
+                btn2:function(index,layero) {
+                    layer.load(1)
+                    data = {
+                        'picon':$("#picon").val(),
+                        'pname':$("#pname").val(),
+                        'desc':$("#desc").val(),
+                        'role':$("input[name=project-role]:checked").val(),
+                    }
+                    $.ajax({
+                        url:"{% url 'create_project' %}",
+                        type:'post',
+                        data:data,
+                        success:function(r){
+                            if(r.status){
+                                window.location.href = '/create_doc/?pid=' + r.data.id;
+                            }else{
+                                //创建失败，提示
+                                console.log(r)
+                                layer.closeAll('loading')
+                                layer.msg(r.data)
+                            }
+                        },
+                        error:function(){
+                            layer.closeAll('loading')
+                            layer.msg("创建异常")
+                        }
+                    })
+                },
+            });
+        };
+        //修改文集
+        modifyPro = function(pro_id){
+            layer.open({
+                type:1,
+                title:'{% trans "修改文集" %}',
+                area:'300px;',
+                id:'createPro',//配置ID
+                content:'<div style="padding: 20px;"><input class="layui-input" type="text" id="pname" style="margin-bottom:10px;" placeholder="输入文集名" required  lay-verify="required"><textarea name="desc" id="desc" placeholder="输入文集简介" class="layui-textarea"></textarea></div>',
+                btn:['{% trans "确定" %}','{% trans "取消" %}'], //添加按钮
+                btnAlign:'c', //按钮居中
+                yes:function (index,layero) {
+                    layer.load(1);
+                    data = {
+                        'pro_id':pro_id,
+                        'name':$("#pname").val(),
+                        'desc':$("#desc").val(),
+                    }
+                    $.post("{% url 'modify_project' %}",data,function(r){
+                        layer.closeAll("loading");
+                        if(r.status){
+                            //修改成功，刷新页面
+                            window.location.reload();
+                        }else{
+                            //修改失败，提示
+                            // console.log(r)
+                            layer.msg(r.data)
+                        }
+                    })
+                },
+            });
+        };
+        //修改用户密码
+        changePwd = function(uid,username){
+            layer.open({
+                type:1,
+                title:'{% trans "修改密码" %}',
+                area:'300px;',
+                id:'changePwd',
+                content:'<div style="padding:10px 0 0 20px;">修改用户[' + username + ']的密码：</div><div style="padding: 20px;"><input class="layui-input" type="password" id="newPwd1" style="margin-bottom:10px;" placeholder="输入新密码" required  lay-verify="required"><input class="layui-input" type="password" id="newPwd2" placeholder="再次确认新密码" required  lay-verify="required"></div>',
+                btn:['{% trans "确认修改" %}','{% trans "取消" %}'],
+                yes:function (index,layero) {
+                    layer.load(1);
+                    data = {
+                        'password':$("#newPwd1").val(),
+                        'password2':$("#newPwd2").val(),
+                    }
+                    $.post("{% url 'modify_pwd' %}",data,function(r){
+                        layer.closeAll("loading");
+                        if(r.status){
+                            //修改成功
+                            window.location.reload();
+                            //layer.close(index)
+                        }else{
+                            //修改失败，提示
+                            //console.log(r)
+                            layer.msg(r.data)
+                        }
+                    })
+                },
+            })
+        };
+
+    </script>
+    <!-- 统计代码开始 -->
+        {% if debug %}
+        {% else %}
+            {{ static_code | safe }}
+        {% endif %}
+    <!-- 统计代码结束 -->
+
+{% endblock %}
+</body>
+</html>

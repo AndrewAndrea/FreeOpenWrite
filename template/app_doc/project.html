@@ -1,0 +1,219 @@
+<!-- 继承自模板：app_doc/docs_base.html -->
+{% extends 'app_doc/docs_base.html' %}
+<!-- 引入静态文件 -->
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block head_toolbar %}
+    {% if request.user == project.create_user or colla_user > 0 %}
+        <span class="btn pull-left">|</span>
+        <a class="btn pull-left" href="{% url 'create_doc' %}?pid={{project.id}}" target="_blank">
+            <i class="layui-icon layui-icon-add-1"></i> <span class="layui-hide-xs">{% trans "添加" %}</span>
+        </a>
+    {% endif %}
+    {% if request.user == project.create_user %}
+        <a class="btn pull-left" href="{% url 'manage_project' %}" target="_blank">
+            <i class="fa fa-cubes"></i> <span class="layui-hide-xs">{% trans "管理" %}</span>
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content_head %}
+    <h1>{{ project.name }}</h1><hr>
+    <!-- <p style="" class="project-doc-content-head">
+        <i class="fa fa-user"></i> {% trans "创建人：" %}{% if project.create_user.first_name != '' %} {{project.create_user.first_name}} {% else %} {{project.create_user}}{% endif %}
+    &nbsp;&nbsp;&nbsp;&nbsp;<i class="fa fa-timer"></i> {% trans "创建于：" %}{{ project.create_time }}
+    </p> -->
+{% endblock %}
+
+{% block page_content %}
+    <!-- 引入文档过滤器 -->
+    {% load doc_filter %}
+    <div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+        <ul class="layui-tab-title">
+            <li class="layui-this">{% trans "简介" %}</li>
+            <li>{% trans "目录大纲" %}</li>
+            <li>{% trans "最新文档" %}</li>
+            {% if enable_project_report %}
+            <li>{% trans "文集下载" %}</li>
+            {% endif %}
+        </ul>
+        <div class="layui-tab-content" style="padding: 0;">
+            <!-- 文集简介 -->
+            <div class="layui-tab-item layui-show">
+                <div id="project-desc">
+                    <textarea style="display: none;">{% if project.intro == '' or project.intro is None %}{% trans "暂无文集简介" %}{% else %}{{project.intro}}{% endif %}
+                </textarea></div>
+            </div>
+            <!-- 目录大纲 -->
+            <div class="layui-tab-item">
+                <ul class="summary" id="doc-tree"></ul>
+            </div>
+            <!-- 最新文档 -->
+            <div class="layui-tab-item">
+                {% for doc in new_docs %}
+                <div>
+                    <h3><a style="color:#333;" href="{% url 'doc' project.id doc.id %}">{{doc.name}}</a></h3>
+                    <p style="color:#999;font-size:12px;">
+                        {% if doc.pre_content|length > 200 %}
+                            {{ doc.pre_content|truncatechars:200 }}……
+                        {% else %}
+                            {{ doc.pre_content }}
+                        {% endif %}
+                    </p>
+                    <p style="color:#999;font-size:12px;"><i class="fa fa-user"></i> {% if doc.create_user.first_name != '' %} {{doc.create_user.first_name}} {% else %} {{doc.create_user}}{% endif %} - <i class="fa fa-clock-o"></i> {{doc.modify_time}}</p>
+                </div>
+                <hr>
+                {% endfor %}
+            </div>
+            <!-- 文集下载 -->
+            {% if enable_project_report %}
+            <div class="layui-tab-item">
+                <p style="margin-bottom: 0px;">
+                    <span class="layui-breadcrumb" lay-separator="|">
+                        {% if allow_download %}
+                            {% if allow_download.allow_epub == 1 %}
+                                <a href="javascript:void(0);" onclick="reportFile('{{project.id}}','epub')"><i class="fa fa-download"></i> <u>EPUB电子书</u></a>
+                            {% endif %}
+                            {% if allow_download.allow_pdf == 1 %}
+                                <a href="javascript:void(0);" onclick="reportFile('{{project.id}}','pdf')"><i class="fa fa-download"></i> <u>PDF电子书</u></a>
+                            {% endif %}
+                            {% if allow_download.allow_pdf == 0 and allow_download.allow_epub == 0 %}
+                                <a>{% trans "文集作者未开放此文集的任何格式下载！" %}</a>
+                            {% endif %}
+                        {% else %}
+                            <a>{% trans "文集作者未开放此文集的任何格式下载！" %}</a>
+                        {% endif %}
+                    </span>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>      
+
+    {% if enable_project_report %}
+    <script>        
+        // 下载文件
+        reportFile = function(pro_id,types){
+            layer.load(1)
+            var data = {'pro_id':pro_id,'types':types};
+            $.post("{% url 'report_file' %}",data,function(r){
+                layer.closeAll('loading');
+                if(r.status){
+                    //文件下载提示
+                    downloadFile(r.data)
+                }else{
+                    layer.msg(r.data)
+                }
+            })
+        }
+        //下载文件弹出框
+        downloadFile = function(download_link){
+            layer.open({
+                type:1,
+                title:"下载导出文档",
+                area:"300px",
+                id:"downloadMd",
+                content:'<p style="text-align:center;color:red;">请尽快下载，避免失效！</p><br><a class="layui-btn layui-btn-normal layui-btn-fluid download-md-link" href="'+ download_link + '" download="" >点击下载文件</a>',
+                //btn:['确定','取消'], //添加按钮
+                //btnAlign:'c', //按钮居中
+                success: function (layero, index) {
+                    $(layero).find('.download-md-link').click(function () {
+                        layer.close(index);
+                    })
+            }
+            })
+        };
+    </script>
+    {% endif %}
+
+{% endblock %}
+
+{% block doc_bottom_block %}
+<span >
+    <i class="layui-icon layui-icon-user"></i>
+    <span tooltip="文集创建者">{% if project.create_user.first_name != '' %} {{project.create_user.first_name}} {% else %} {{project.create_user.username}}{% endif %}</span>
+    {% for colla in colla_user_list %}
+    ,<span tooltip="文集成员">{% if colla.user.first_name != '' %} {{colla.user.first_name}} {% else %} {{colla.user.username}}{% endif %}</span>
+    {% endfor %}
+</span>
+
+<button id="share" class="doc-bottom-btn" tooltip="分享本文档" style="padding-left: 20px;">
+    <i class="fa fa-share-alt" ></i> {% trans "分享" %}
+</button>
+{% endblock %}
+
+{% block custom_script %}
+<script src="{% static 'editor.md/lib/marked.min.js' %}"></script>
+<script src="{% static 'editor.md/editormd.js' %}?version={{mrdoc_version}}"></script>
+<script>
+    // 生成文集简介中的文档大纲
+    $.ajaxSetup({
+        data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
+    });
+    var tree = layui.tree;
+    var layer = layui.layer;
+    var util = layui.util;
+    getDocTree = function(){
+        layer.load(1)
+        $.post("{% url 'get_pro_doc_tree' %}",{'pro_id':'{{project.id}}'},function(r){
+            if(r.status){
+                var toc_str = ""
+                layui.each(r.data,function(index,item){
+                    toc_str += "<li>"
+                    if(item['children'] != undefined){ // 存在二级文档
+                        li = '<div class="project-toc-left"><a href="/project-'+'{{project.id}}'+'/doc-'+item.id+'/" title="'+item.title+'">'+item.title+'</a></div><div class="project-toc-right layui-hide-xs">' + util.toDateString(item.modify_time,"yyyy-MM-dd") + '</div>' +'<ul class="sub-menu">'
+                        toc_str += li
+                        layui.each(item['children'],function(index,item){// 遍历二级文档
+                            toc_str += '<li>'
+                            if(item['children'] != undefined){ //存在三级文档
+                                li = '<div class="project-toc-left"><a href="/project-'+'{{project.id}}'+'/doc-'+item.id+'/" title="'+item.title+'">'+item.title+'</a></div><div class="project-toc-right layui-hide-xs">' + util.toDateString(item.modify_time,"yyyy-MM-dd") + '</div>' +'<ul class="sub-menu">'
+                                toc_str += li
+                                layui.each(item['children'],function(index,item){ // 遍历三级文档
+                                    li = '<li><div class="project-toc-left"><a href="/project-'+'{{project.id}}'+'/doc-'+item.id+'/" title="'+item.title+'">'+item.title+'</a></div><div class="project-toc-right layui-hide-xs">' + util.toDateString(item.modify_time,"yyyy-MM-dd") + '</div></li>'
+                                    toc_str += li
+                                })
+                                toc_str += '</ul>'
+                            }else{// 不存在三级文档
+                                li = '<div class="project-toc-left"><a href="/project-'+'{{project.id}}'+'/doc-'+item.id+'/" title="'+item.title+'">'+item.title+'</a></div><div class="project-toc-right layui-hide-xs">' + util.toDateString(item.modify_time,"yyyy-MM-dd") + '</div>'
+                                toc_str += li
+                            }
+                            toc_str += '</li>'
+                        })    
+                        toc_str += '</ul>'
+                    }else{//不存在二级文档
+                       li = '<div class="project-toc-left"><a href="/project-'+'{{project.id}}'+'/doc-'+item.id+'/" title="'+item.title+'">'+item.title+'</a></div><div class="project-toc-right layui-hide-xs">' + util.toDateString(item.modify_time,"yyyy-MM-dd") + '</div>'
+                       toc_str += li
+                    }
+                    toc_str += '</li>'
+                });
+                $("#doc-tree").append(toc_str);
+            }else{
+                layer.msg("获取文集文档大纲失败！")
+            }
+            layer.closeAll('loading')
+        });
+    };
+    getDocTree();
+    // 渲染文集简介Markdown
+    const renderDesc = () => {
+        editormd.markdownToHTML("project-desc", {
+            emoji           : true,  //emoji表情
+            taskList        : true,  // 任务列表
+            tex             : true,  // 科学公式
+            flowChart       : true,  // 流程图
+            sequenceDiagram : true,  // 时序图
+            tocm            : false, //目录
+            toc             :false,
+            tocContainer : "#toc-container",
+            tocDropdown   : false,
+            atLink    : false,//禁用@链接
+            htmlDecode     : "link,style,base,script,iframe", //过滤部分HTML标签
+        });
+    }
+    layer.load(1);
+    renderDesc();
+</script>
+{% endblock %}
