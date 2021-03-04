@@ -247,7 +247,7 @@ def drawing_bed_setting(request):
         storage_path = qiniu_settings.get(name="storage_path")
         default_types = qiniu_settings.get(name="default_types")
     if request.method == 'GET':
-        return render(request, 'app_admin/admin_drawing_bed_setting.html', locals())
+        return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
     elif request.method == 'POST':
         types = request.POST.get('type', None)
         # 基础设置
@@ -306,7 +306,7 @@ def drawing_bed_setting(request):
                     # 当前默认图床如果有值，则修改其他图床的默认值为None
                     DrawingBedSetting.objects.exclude(types__contains=types).filter(name='default_types').update(
                         value=None)
-                return render(request, 'app_admin/admin_drawing_bed_setting.html', locals())
+                return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
             else:
                 return JsonResponse({'status': False, 'data': '缺少必要参数！'})
 
