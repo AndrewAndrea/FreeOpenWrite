@@ -112,6 +112,7 @@ def article_distribution(request):
     code_id = request.POST.get('code_id', None)
     doc_id = request.POST.get('doc_id', None)
     doc_tags = request.POST.get('tags', None)
+    plant_name_list = []
     try:
         doc = Doc.objects.filter(id=int(doc_id), create_user=request.user)
         doc_create_user = doc[0].create_user
@@ -128,6 +129,10 @@ def article_distribution(request):
         cookie_user = cookie[0].create_user
         plant_cookie = cookie[0].cookie
         plant_name = cookie[0].plant.plant_name
+        doc_plant_name_list = DocPublishData.objects.filter(doc=doc[0])
+        if doc_plant_name_list:
+            for data in doc_plant_name_list:
+                plant_name_list.append(data.get('plant_name'))
         # 查询底部模板，如果有默认的模板，则自动拼接到文章结尾发布
         bottom = DocBottomConfiguration.objects.filter(is_default=True, create_user=request.user)
         if bottom.count():
@@ -209,12 +214,6 @@ def article_distribution(request):
                     status=pub_status,
                     create_user=request.user
                 )
-                if doc_plant_list:
-                    plant_list = doc_plant_list + ',' + plant_name
-                else:
-                    plant_list = plant_name
-                doc.update(plant_list=plant_list)
-                # print(register_code)
                 return JsonResponse({'status': True, 'data': '发布成功'})
             return JsonResponse({'status': False, 'data': '发布失败'})
         else:

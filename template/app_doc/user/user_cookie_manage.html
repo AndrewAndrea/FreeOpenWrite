@@ -384,7 +384,7 @@
                         }
                         $.post("{% url 'article_all_distribution' %}", data, function (r) {
                             if (r.status) {
-                                layer.msg(r.data, function () {
+                                layer.msg(r.result, function () {
                                     window.location.href='/doc_publish_manage';
                                 });
                                 //删除成功，刷新页面

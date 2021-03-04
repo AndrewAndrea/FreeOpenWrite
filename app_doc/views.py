@@ -1304,7 +1304,7 @@ def manage_doc(request):
             item = {
                 'id': doc.id,
                 'name': doc.name,
-                'plant_list': doc.plant_list,
+                'plant_list': DocPublishData.objects.get(doc=doc).plant_name,
                 'parent':Doc.objects.get(id=doc.parent_doc).name if doc.parent_doc != 0 else '无',
                 'project_id': Project.objects.get(id=doc.top_doc).id,
                 'project_name':Project.objects.get(id=doc.top_doc).name,

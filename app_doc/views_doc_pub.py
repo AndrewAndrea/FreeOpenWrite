@@ -104,16 +104,22 @@ def article_all_distribution(request):
     # 发布文章。获取所有平台的cookie，分发后返回分发结果
     doc_id = request.POST.get('doc_id', None)
     doc_tags = request.POST.get('tags', None)
+    all_result = {}
+    plant_name_list = []
     try:
         doc = Doc.objects.filter(id=int(doc_id), create_user=request.user)
         doc_create_user = doc[0].create_user
         doc_name = doc[0].name
         doc_pre_content = doc[0].pre_content
         # 已发布平台
-        doc_plant_list = doc[0].plant_list
+        # doc_plant_list = doc[0].plant_list
         editor_mode = doc[0].editor_mode
         doc_content = doc[0].content
         doc_status = doc[0].status
+        doc_plant_name_list = DocPublishData.objects.filter(doc=doc[0])
+        if doc_plant_name_list:
+            for data in doc_plant_name_list:
+                plant_name_list.append(data.get('plant_name'))
         if doc_status != 1:
             return JsonResponse({'status': False, 'data': '不能发布草稿哦！'})
         # 查询底部模板，如果有默认的模板，则自动拼接到文章结尾发布
@@ -133,18 +139,14 @@ def article_all_distribution(request):
             return JsonResponse({'status': False, 'data': '该文章不是你的哦！'})
 
         cookie = CookiePlant.objects.filter(create_user=request.user)
-
-        all_result = {}
-
         for plant_info in cookie:
             cookie_user = plant_info.create_user
             plant_cookie = plant_info.cookie
             plant_name = plant_info.plant.plant_name
             all_result[plant_name] = {}
-            if doc_plant_list and plant_name in doc_plant_list:
+            if plant_name_list and plant_name in plant_name_list:
                 all_result[plant_name] = {'status': False, 'data': f'当前文章在 {plant_name} 平台已发布'}
                 continue
-
             if plant_name == 'CSDN':
                 result = CSDNPublish(plant_cookie).publish_content(tags=doc_tags, title=doc_name,
                                                                    markdowncontent=doc_pre_content,
@@ -210,23 +212,17 @@ def article_all_distribution(request):
                     status=pub_status,
                     create_user=request.user
                 )
-                if doc_plant_list:
-                    plant_list = doc_plant_list + ',' + plant_name
-                else:
-                    plant_list = plant_name
-                doc.update(plant_list=plant_list)
             if pub_status == 1:
                 all_result[plant_name] = {'status': True, 'data': f'在 {plant_name} 平台分发成功'}
             else:
                 all_result[plant_name] = {'status': True, 'data': f'在 {plant_name} 平台分发失败'}
         return JsonResponse({'status': True, 'data': '发布已完成！', 'result': all_result})
 
-
     except ObjectDoesNotExist:
         return JsonResponse({'status': False, 'data': '当前平台不存在'})
     except:
         print(traceback.format_exc())
-        return JsonResponse({'status': False, 'data': '系统异常'})
+        return JsonResponse({'status': False, 'data': '系统异常', 'result': all_result})
 
 
 # 图床管理

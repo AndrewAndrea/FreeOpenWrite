@@ -27,13 +27,6 @@
 - [x] 已支持图床
   - [x] 七牛云图床
 
-欢迎提 `issues`
-
-支持项目
-
-![](http://img.andrewblog.cn/freeopenwrite/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210303174504_1614764937.jpg)![](http://img.andrewblog.cn/freeopenwrite/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210303174748_1614764931.jpg)
-
-
 # 超级管理员新增渠道管理
 
 - 发布平台管理
