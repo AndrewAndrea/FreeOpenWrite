@@ -10,7 +10,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -61,7 +60,7 @@ whoosh_index/
 *.log
 local_settings.py
 db.sqlite3
-media
+media/20*
 
 # Flask stuff:
 instance/
