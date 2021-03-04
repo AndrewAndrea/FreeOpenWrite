@@ -1025,89 +1025,6 @@ def admin_plant_manage(request):
         return JsonResponse({'status': False, 'data': '方法错误'})
 
 
-# 图床管理
-@superuser_only
-@logger.catch()
-def drawing_bed_setting(request):
-    # 图床管理页面
-    qiniu_settings = DrawingBedSetting.objects.filter(types="qiniu")
-    if qiniu_settings.count() == 8:
-        access_key = qiniu_settings.get(name='access_key')
-        secret_key = qiniu_settings.get(name='secret_key')
-        # secret_key.value = 'mcJ6xYJwBpmATMddxXTpypgiNwpJQMbUge3U_FsO'
-        # secret_key.value = '****************************************'
-        storage_space_name = qiniu_settings.get(name='storage_space_name')
-        visit_website = qiniu_settings.get(name="visit_website")
-        storage_area = qiniu_settings.get(name="storage_area")
-        url_suffix = qiniu_settings.get(name="url_suffix")
-        storage_path = qiniu_settings.get(name="storage_path")
-        default_types = qiniu_settings.get(name="default_types")
-    if request.method == 'GET':
-        return render(request, 'app_admin/admin_drawing_bed_setting.html', locals())
-    elif request.method == 'POST':
-        types = request.POST.get('type', None)
-        # 基础设置
-        if types == 'qiniu':
-            access_key = request.POST.get('access_key', None)  # ak
-            secret_key = request.POST.get('secret_key', None)  # sk
-            storage_space_name = request.POST.get('storage_space_name', None)  # 存储空间名
-            visit_website = request.POST.get('visit_website', None)  # 访问网址
-            storage_area = request.POST.get('storage_area', None)  # 存储区域
-            url_suffix = request.POST.get('url_suffix', None)  # 网址后缀
-            storage_path = request.POST.get('storage_path', None)  # 存储路径
-            default_types = request.POST.get('default_types', None)  # 存储路径
-
-            if access_key and secret_key and storage_space_name and visit_website and storage_area:
-                # 更新sk
-                DrawingBedSetting.objects.update_or_create(
-                    name='access_key',
-                    defaults={'value': access_key, 'types': types}
-                )
-                # 更新sk
-                DrawingBedSetting.objects.update_or_create(
-                    name='secret_key',
-                    defaults={'value': secret_key, 'types': types}
-                )
-                # 更新存储空间名
-                DrawingBedSetting.objects.update_or_create(
-                    name='storage_space_name',
-                    defaults={'value': storage_space_name, 'types': types}
-                )
-                # 更新访问网址
-                DrawingBedSetting.objects.update_or_create(
-                    name='visit_website',
-                    defaults={'value': visit_website, 'types': types}
-                )
-                # 更新存储区域
-                DrawingBedSetting.objects.update_or_create(
-                    name='storage_area',
-                    defaults={'value': storage_area, 'types': types}
-                )
-                # 更新网址后缀
-                DrawingBedSetting.objects.update_or_create(
-                    name='url_suffix',
-                    defaults={'value': url_suffix, 'types': types}
-                )
-                # 更新存储路径
-                DrawingBedSetting.objects.update_or_create(
-                    name='storage_path',
-                    defaults={'value': storage_path, 'types': types}
-                )
-                # 更新是否为默认图床
-                DrawingBedSetting.objects.update_or_create(
-                    name='default_types',
-                    defaults={'value': default_types, 'types': types}
-                )
-                if default_types:
-                    # 当前默认图床如果有值，则修改其他图床的默认值为None
-                    DrawingBedSetting.objects.exclude(types__contains=types).filter(name='default_types').update(
-                        value=None)
-                return render(request, 'app_admin/admin_drawing_bed_setting.html', locals())
-            else:
-                return JsonResponse({'status': False, 'data': '缺少必要参数！'})
-
-
-# 图床管理
 @superuser_only
 @logger.catch()
 def admin_center_menu(request):
@@ -1175,13 +1092,13 @@ def admin_center_menu(request):
         #     "icon": "layui-icon layui-icon-user",
         #     "href": reverse('admin_cookie_manage'),
         # },
-        {
-            "id": 9,
-            "title": "图床设置",
-            "type": 1,
-            "icon": "layui-icon layui-icon-set",
-            "href": reverse('drawing_bed_setting'),
-        },
+        # {
+        #     "id": 9,
+        #     "title": "图床设置",
+        #     "type": 1,
+        #     "icon": "layui-icon layui-icon-set",
+        #     "href": reverse('drawing_bed_setting'),
+        # },
         {
             "id": "common",
             "title": "使用帮助",

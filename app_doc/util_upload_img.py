@@ -4,11 +4,11 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-from django.contrib.auth.decorators import login_required # 登录需求装饰器
-import datetime,time,json,base64,os,uuid
-from app_doc.models import Image,ImageGroup,Attachment
+from django.contrib.auth.decorators import login_required  # 登录需求装饰器
+import datetime, time, json, base64, os, uuid
+from app_doc.models import Image, ImageGroup, Attachment, DrawingBedSetting
 
-from app_admin.models import SysSetting, DrawingBedSetting
+from app_admin.models import SysSetting
 import requests
 import random
 from qiniu import Auth, put_data
@@ -26,6 +26,10 @@ def upload_ice_img(request):
     # formData.append('upload_num', i);
     # formData.append('upload_type', "files");
     ##################
+    dbs = DrawingBedSetting.objects.filter(name="default_types", value__isnull=False, create_user=request.user)
+    bed_default_types = "basic"
+    if dbs.count() != 0:
+        bed_default_types = dbs.get(name="default_types").types
     try:
         up_type = request.POST.get('upload_type', '')
         up_num = request.POST.get('upload_num', '')
@@ -37,20 +41,19 @@ def upload_ice_img(request):
         res_dic = {'length': int(up_num)}
         for i in range(0, int(up_num)):
             file_obj = request.FILES.get('file_' + str(i))
-            result = ice_save_file(file_obj, request.user)
+            result = ice_save_file(file_obj, request.user, bed_default_types)
             res_dic[i] = result
     elif iceEditor_img.lower().startswith('http'):
-        res_dic = ice_url_img_upload(iceEditor_img, request.user)
+        res_dic = ice_url_img_upload(iceEditor_img, request.user, bed_default_types)
     else:
         # 粘贴上传和单文件上传
         file_obj = request.FILES.get('file[]')
-        result = ice_save_file(file_obj, request.user)
+        result = ice_save_file(file_obj, request.user, bed_default_types)
         res_dic = {0: result, "length": 1, 'other_msg': iceEditor_img}  # 一个文件，直接把文件数量固定了
     return HttpResponse(json.dumps(res_dic), content_type="application/json")
 
 
-def ice_save_file(file_obj,user):   
-
+def ice_save_file(file_obj, user, bed_default_types):
     # 默认保留支持ice单文件上传功能，可以iceEditor中开启
     file_suffix = str(file_obj).split(".")[-1]  # 提取图片格式
     # 允许上传文件类型，ice粘贴上传为blob
@@ -71,39 +74,39 @@ def ice_save_file(file_obj,user):
     file_name = name_time + name_rand + "." + file_suffix
     path_file = relative_path + file_name
     path_file = settings.MEDIA_ROOT + path_file
-    #file_Url 是文件的url下发路径
-    file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//","/")
-    
+    # file_Url 是文件的url下发路径
+    file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", "/")
+    if bed_default_types == 'qiniu':
+        file_url = upload_qiniu(file_name, file_obj.read())
+        if file_url is False:
+            return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+    else:
+        with open(path_file, 'wb') as f:
+            for chunk in file_obj.chunks():
+                f.write(chunk)  # 保存文件
+            if file_suffix.lower() in is_images:
+                Image.objects.create(
+                    user=user,
+                    file_path=file_url,
+                    file_name=file_name,
+                    remark="iceEditor上传"
+                )
+            else:
+                # 文件上传，暂时不屏蔽，如果需要正常使用此功能，是需要在iceeditor中修改的，mrdoc使用的是自定义脚本上传
+                Attachment.objects.create(
+                    user=user,
+                    file_path=file_url,
+                    file_name=file_name,
+                    file_size=str(round(len(chunk) / 1024, 2)) + "KB"
+                )
 
-    with open(path_file, 'wb') as f:
-        for chunk in file_obj.chunks():
-            f.write(chunk)  # 保存文件
-        if file_suffix.lower() in is_images:
-            Image.objects.create(
-                user=user,
-                file_path=file_url,
-                file_name=file_name,
-                remark="iceEditor上传"
-            )
+    return {"error": 0, "name": str(file_obj), 'url': file_url}
 
-        
-        else :
-            #文件上传，暂时不屏蔽，如果需要正常使用此功能，是需要在iceeditor中修改的，mrdoc使用的是自定义脚本上传
-
-            Attachment.objects.create(
-                user=user,
-                file_path=file_url,
-                file_name=file_name,
-                file_size=str(round(len(chunk) / 1024, 2)) + "KB"
-            )
-
-        return  {"error":0, "name": str(file_obj),'url':file_url}
-
-    return {"error": "文件存储异常"}
+    # return {"error": "文件存储异常"}
 
 
 # ice_url图片上传
-def ice_url_img_upload(url, user):
+def ice_url_img_upload(url, user, bed_default_types):
     relative_path = upload_generation_dir()
     name_time = time.strftime("%Y-%m-%d_%H%M%S_")
     name_join = ""
@@ -112,7 +115,7 @@ def ice_url_img_upload(url, user):
     path_file = os.path.join(relative_path, file_name)
     path_file = settings.MEDIA_ROOT + path_file
     # print('文件路径：', path_file)
-    file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//","/")
+    file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", "/")
     # print("文件URL：", file_url)
     header = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
@@ -120,14 +123,19 @@ def ice_url_img_upload(url, user):
     r = requests.get(url, headers=header, stream=True)
 
     if r.status_code == 200:
-        with open(path_file, 'wb') as f:
-            f.write(r.content)  # 保存文件
-        Image.objects.create(
-            user=user,
-            file_path=file_url,
-            file_name=file_name,
-            remark='iceurl粘贴上传',
-        )
+        if bed_default_types == 'qiniu':
+            file_url = upload_qiniu(file_name, r.content)
+            if file_url is False:
+                return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+        else:
+            with open(path_file, 'wb') as f:
+                f.write(r.content)  # 保存文件
+            Image.objects.create(
+                user=user,
+                file_path=file_url,
+                file_name=file_name,
+                remark='iceurl粘贴上传',
+            )
     resp_data = {"error": 0, "name": file_name, 'url': file_url}
     return resp_data
 
@@ -139,7 +147,7 @@ def upload_img(request):
     # {"success": 0, "message": "出错信息"}
     # {"success": 1, "url": "图片地址"}
     ##################
-    dbs = DrawingBedSetting.objects.filter(name="default_types", value__isnull=False)
+    dbs = DrawingBedSetting.objects.filter(name="default_types", value__isnull=False, create_user=request.user)
     bed_default_types = "basic"
     if dbs.count() != 0:
         bed_default_types = dbs.get(name="default_types").types
@@ -182,7 +190,6 @@ def upload_img(request):
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-
 # 目录创建
 def upload_generation_dir(dir_name=''):
     today = datetime.datetime.today()
@@ -222,7 +229,7 @@ def img_upload(files, dir_name, user, bed_default_types, group_id=None):
     else:
         path_file = os.path.join(relative_path, file_name)
         path_file = settings.MEDIA_ROOT + path_file
-        file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//",'/')
+        file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", '/')
         # print("文件URL：",file_url)
         with open(path_file, 'wb') as f:
             for chunk in files.chunks():
@@ -251,7 +258,7 @@ def base_img_upload(files, dir_name, user, bed_default_types):
         relative_path = upload_generation_dir(dir_name)
         path_file = os.path.join(relative_path, file_name)
         path_file = settings.MEDIA_ROOT + path_file
-        file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//","/")
+        file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", "/")
         # print("文件URL：", file_url)
         with open(path_file, 'wb') as f:
             f.write(files_base)  # 保存文件
@@ -271,7 +278,7 @@ def url_img_upload(url, dir_name, user, bed_default_types):
     path_file = os.path.join(relative_path, file_name)
     path_file = settings.MEDIA_ROOT + path_file
     # print('文件路径：', path_file)
-    file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//","/")
+    file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", "/")
     # print("文件URL：", file_url)
     header = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"

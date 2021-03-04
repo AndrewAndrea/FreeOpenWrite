@@ -16,7 +16,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from loguru import logger
 from app_doc.report_utils import *
-from app_admin.models import UserOptions, SysSetting, Plant, CookiePlant
+from app_admin.models import UserOptions, SysSetting, Plant
 from app_doc.models import DocBottomConfiguration
 
 
@@ -416,6 +416,14 @@ def user_center_menu(request):
                     "type": 1,
                     "openType": "_iframe",
                     "href": reverse("bottom_template_manage")
+                },
+                {
+                    "id": "drawing_bed_setting",
+                    "title": "图床配置",
+                    "icon": "layui-icon layui-icon-face-smile",
+                    "type": 1,
+                    "openType": "_iframe",
+                    "href": reverse("drawing_bed_setting")
                 },
                 {
                     "id": "doc_template",

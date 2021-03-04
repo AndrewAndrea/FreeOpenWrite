@@ -1,6 +1,6 @@
 # [FreeOpenWrite](https://gitee.com/msandrew/freeopenwrite) 
 # 简介
-- 本项目 `FreeOpenWrite` 是在 [MrDoc](https://zmister.com/mrdoc/MrDoc) 的基础上做的更新，倾向于个人使用，
+- 本项目 `FreeOpenWrite` 是在 [MrDoc：https://gitee.com/zmister/MrDoc](https://gitee.com/zmister/MrDoc) 的基础上做的更新，倾向于个人使用，
 感谢 [@zmister](http://gitee.com/zmister)
 
 - 本项目侧重点在一文多发，在 `mrdoc` 的基础上进行的开发。
@@ -31,8 +31,7 @@
 
 支持项目
 
-![](http://img.andrewblog.cn/freeopenwrite/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210303174504_1614764937.jpg-gg)
-![](http://img.andrewblog.cn/freeopenwrite/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210303174748_1614764931.jpg-gg)
+![](http://img.andrewblog.cn/freeopenwrite/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210303174504_1614764937.jpg)![](http://img.andrewblog.cn/freeopenwrite/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20210303174748_1614764931.jpg)
 
 
 # 超级管理员新增渠道管理
@@ -109,10 +108,9 @@
 - [ ] 批量删除已发布数据
 - [ ] 已发布数据的筛选功能
 
-# 一些问题
+# 2021-03-04  更新
 
-- 目前支持的平台较少，页面 UI 有点丑，后续会继续优化。
-- 图床目前只支持七牛云。还有一些没有测试出来的 BUG
-- 博客园目前没有支持分类选项
-- 其他各平台支持的发布选项比较单一
-
+ - 更新页面显示内容
+ - `cookie` 管理模型、图床管理模型更新到 `app_doc` 目录下
+ - 图床配置更新到个人中心，每个人可单独配置
+ - 优化代码逻辑

@@ -80,6 +80,8 @@ urlpatterns = [
     path('cookie_manage/', views_user.cookie_manage, name="cookie_manage"),  # cookie管理
     path('article_distribution/', views_user.article_distribution, name="article_distribution"),  # 文章分发
 
+    path('drawing_bed_setting/', views_doc_pub.drawing_bed_setting, name="drawing_bed_setting"),  # 发布平台管理
+
     path('bottom_template_manage/', views_user.bottom_template_manage, name="bottom_template_manage"),  # 文档底部模板
     path('create_bottom_template/', views_user.create_bottom_template, name="create_bottom_template"),  # 创建底部模板
     path('bottom_is_default/', views_user.bottom_is_default, name="bottom_is_default"),  # 创建底部模板

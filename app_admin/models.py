@@ -83,35 +83,4 @@ class Plant(models.Model):
         verbose_name_plural = verbose_name
 
 
-# 图床配置模型
-class DrawingBedSetting(models.Model):
-    name = models.CharField(verbose_name="配置名称", max_length=100, unique=True)
-    types = models.CharField(verbose_name="图床名称", max_length=10, null=False)
-    value = models.TextField(verbose_name='配置', null=True, blank=True)
-    create_time = models.DateTimeField(auto_now=True, verbose_name='创建时间')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = '图床配置'
-        verbose_name_plural = verbose_name
-
-
-# 用户各平台 cookie模型
-class CookiePlant(models.Model):
-    plant = models.ForeignKey(Plant, on_delete=models.CASCADE)
-    cookie = models.TextField(verbose_name="平台Cookie")
-    # Cookie状态：0表示失效，1表示有效，默认为1
-    status = models.IntegerField(verbose_name="cookie状态", default=1)
-    create_user = models.ForeignKey(User, on_delete=models.CASCADE)
-    create_time = models.DateTimeField(auto_now=True, verbose_name='创建时间')
-
-    def __str__(self):
-        return self.cookie
-
-    class Meta:
-        verbose_name = '平台cookie管理'
-        verbose_name_plural = verbose_name
-
 
