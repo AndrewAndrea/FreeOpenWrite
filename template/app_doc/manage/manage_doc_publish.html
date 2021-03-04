@@ -17,10 +17,10 @@
             <div class="layui-form-item">
               <label class="layui-form-label">{% trans "渠道" %}</label>
               <div class="layui-input-inline">
-                <select name="pro_id" lay-verify="required"  lay-filter="project" id="project">
+                <select name="plant" lay-verify="required"  lay-filter="plant" id="plant">
                     <option value="">{% trans "按渠道筛选" %}</option>
-                    {% for p in project_list %}
-                        <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% for p in plant_list %}
+                        <option value="{{ p.plant_name }}">{{ p.plant_name }}</option>
                     {% endfor %}
                 </select>
               </div>
@@ -44,8 +44,11 @@
 
 <!-- 表格工具栏 -->
 <script type="text/html" id="doc-toolbar">
+    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="GetDocData">
+        <i class="layui-icon layui-icon-addition"></i>获取已分发文章数据
+    </button>
     <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove">
-        <i class="layui-icon layui-icon-addition"></i>获取文章的阅读数
+        <i class="layui-icon layui-icon-addition"></i>批量删除
     </button>
 </script>
 
@@ -121,11 +124,11 @@
             toolbar: '#doc-toolbar',
             defaultToolbar: ['filter']
         });
-        // 删除文档
+        // 删除分发数据
         delDoc = function(doc_id){
             layer.open({
                 type:1,
-                title:'删除文档',
+                title:'删除分发记录',
                 area:'300px;',
                 id:'delPro',//配置ID
                 content:'<div style="margin-left:10px;">警告：此操作将删除此分发记录，并删除所在渠道已发布的文章！</div>',
@@ -148,12 +151,72 @@
                 },
             });
         };
+        // 批量删除分发数据
+        batchRemoveDoc = function(obj) {
+            let data = table.checkStatus(obj.config.id).data;
+            if (data.length === 0) {
+                layer.msg("未选中任何文档", {
+                    icon: 3,
+                    time: 1000
+                });
+                return false;
+            }
+            let doc_id = "";
+            for (let i = 0; i < data.length; i++) {
+                doc_id += data[i].id + ",";
+            }
+            doc_id = doc_id.substr(0, doc_id.length - 1);
+            // console.log(pro_id)
+            layer.confirm('确定要删除这些文档？', {
+                icon: 3,
+                title: '提示'
+            }, function(index) {
+                layer.close(index);
+                let loading = layer.load();
+                $.ajax({
+                    url: "{% url 'del_doc_publish' %}",
+                    dataType: 'json',
+                    type: 'post',
+                    data:{'doc_publish_id':doc_id,'range':'multi'},
+                    success: function(r) {
+                        layer.close(loading);
+                        if (r.status) {
+                            layer.msg("删除成功", {
+                                icon: 1,
+                                time: 1000
+                            }, function() {
+                                table.reload('doc-table');
+                            });
+                        } else {
+                            layer.msg(r.data, {
+                                icon: 2,
+                                time: 1000
+                            });
+                        }
+                    }
+                })
+            });
+        };
+        // 获取已分发文章数据
+        GetDocData = function(){
+
+                $.post("{% url 'article_all_num' %}",function(r){
+                    layer.closeAll('loading')
+                    if(r.status){
+                        window.location.reload();
+                        //layer.close(index)
+                    }else{
+                        layer.msg(r.data)
+                    }
+                })
+
+        };
         // 监听文集筛选
-        form.on('select(project)', function(data){
-            console.log('选择文集：',data.value); //得到被选中的值
+        form.on('select(plant)', function(data){
+            console.log('选择渠道：',data.value); //得到被选中的值
             table.reload('doc-table',{
                     where:{
-                    'type':1,'project':data.value,
+                    'type':1,'plant_name':data.value,
                 },
             })
         });
@@ -188,6 +251,8 @@
                 createProject();
             }else if(obj.event === 'batchRemove'){ // 批量删除文集
                 batchRemoveDoc(obj)
+            }else if(obj.event === 'GetDocData'){ // 批量删除文集
+                GetDocData()
             }
         });
     })

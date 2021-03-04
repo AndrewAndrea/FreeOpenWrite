@@ -1301,10 +1301,16 @@ def manage_doc(request):
 
         table_data = []
         for doc in docs:
+            doc_push_data = DocPublishData.objects.filter(doc=doc)
+            if doc_push_data:
+                plant_name_list = [push_data.plant_name for push_data in doc_push_data]
+            else:
+                plant_name_list = []
+
             item = {
                 'id': doc.id,
                 'name': doc.name,
-                'plant_list': DocPublishData.objects.get(doc=doc).plant_name,
+                'plant_list': ','.join(plant_name_list),
                 'parent':Doc.objects.get(id=doc.parent_doc).name if doc.parent_doc != 0 else '无',
                 'project_id': Project.objects.get(id=doc.top_doc).id,
                 'project_name':Project.objects.get(id=doc.top_doc).name,

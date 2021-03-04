@@ -501,95 +501,105 @@ def admin_project_istop(request):
 @superuser_only
 @logger.catch()
 def admin_doc(request):
-    if request.method == 'GET':
-        # 文集列表
-        project_list = Project.objects.all()  # 自己创建的文集列表
-        # 文档数量
-        # 已发布文档数量
-        published_doc_cnt = Doc.objects.filter(status=1).count()
-        # 草稿文档数量
-        draft_doc_cnt = Doc.objects.filter(status=0).count()
-        # 所有文档数量
-        all_cnt = published_doc_cnt + draft_doc_cnt
-        return render(request, 'app_admin/admin_doc.html', locals())
-    elif request.method == 'POST':
-        kw = request.POST.get('kw', '')
-        project = request.POST.get('project', '')
-        status = request.POST.get('status', '')
-        if status == '-1':  # 全部文档
-            q_status = [0, 1]
-        elif status in ['0', '1']:
-            q_status = [int(status)]
-        else:
-            q_status = [0, 1]
+    try:
+        if request.method == 'GET':
+            # 文集列表
+            project_list = Project.objects.all()  # 自己创建的文集列表
+            # 文档数量
+            # 已发布文档数量
+            published_doc_cnt = Doc.objects.filter(status=1).count()
+            # 草稿文档数量
+            draft_doc_cnt = Doc.objects.filter(status=0).count()
+            # 所有文档数量
+            all_cnt = published_doc_cnt + draft_doc_cnt
+            return render(request, 'app_admin/admin_doc.html', locals())
+        elif request.method == 'POST':
+            kw = request.POST.get('kw', '')
+            project = request.POST.get('project', '')
+            status = request.POST.get('status', '')
+            if status == '-1':  # 全部文档
+                q_status = [0, 1]
+            elif status in ['0', '1']:
+                q_status = [int(status)]
+            else:
+                q_status = [0, 1]
 
-        if project == '':
-            project_list = Project.objects.all().values_list('id', flat=True)  # 自己创建的文集列表
-            q_project = list(project_list)
-        else:
-            q_project = [project]
+            if project == '':
+                project_list = Project.objects.all().values_list('id', flat=True)  # 自己创建的文集列表
+                q_project = list(project_list)
+            else:
+                q_project = [project]
 
-        page = request.POST.get('page', 1)
-        limit = request.POST.get('limit', 10)
-        # 没有搜索
-        if kw == '':
-            doc_list = Doc.objects.filter(
-                status__in=q_status,
-                top_doc__in=q_project
-            ).order_by('-modify_time')
-        # 有搜索
-        else:
-            doc_list = Doc.objects.filter(
-                Q(content__icontains=kw) | Q(name__icontains=kw),
-                status__in=q_status, top_doc__in=q_project
-            ).order_by('-modify_time')
+            page = request.POST.get('page', 1)
+            limit = request.POST.get('limit', 10)
+            # 没有搜索
+            if kw == '':
+                doc_list = Doc.objects.filter(
+                    status__in=q_status,
+                    top_doc__in=q_project
+                ).order_by('-modify_time')
+            # 有搜索
+            else:
+                doc_list = Doc.objects.filter(
+                    Q(content__icontains=kw) | Q(name__icontains=kw),
+                    status__in=q_status, top_doc__in=q_project
+                ).order_by('-modify_time')
 
-        # 文集列表
-        project_list = Project.objects.filter(create_user=request.user)  # 自己创建的文集列表
-        colla_project_list = ProjectCollaborator.objects.filter(user=request.user)  # 协作的文集列表
+            # 文集列表
+            project_list = Project.objects.filter(create_user=request.user)  # 自己创建的文集列表
+            colla_project_list = ProjectCollaborator.objects.filter(user=request.user)  # 协作的文集列表
 
-        # 文档数量
-        # 已发布文档数量
-        published_doc_cnt = Doc.objects.filter(create_user=request.user, status=1).count()
-        # 草稿文档数量
-        draft_doc_cnt = Doc.objects.filter(create_user=request.user, status=0).count()
-        # 所有文档数量
-        all_cnt = published_doc_cnt + draft_doc_cnt
+            # 文档数量
+            # 已发布文档数量
+            published_doc_cnt = Doc.objects.filter(create_user=request.user, status=1).count()
+            # 草稿文档数量
+            draft_doc_cnt = Doc.objects.filter(create_user=request.user, status=0).count()
+            # 所有文档数量
+            all_cnt = published_doc_cnt + draft_doc_cnt
 
-        # 分页处理
-        paginator = Paginator(doc_list, limit)
-        page = request.GET.get('page', page)
-        try:
-            docs = paginator.page(page)
-        except PageNotAnInteger:
-            docs = paginator.page(1)
-        except EmptyPage:
-            docs = paginator.page(paginator.num_pages)
+            # 分页处理
+            paginator = Paginator(doc_list, limit)
+            page = request.GET.get('page', page)
+            try:
+                docs = paginator.page(page)
+            except PageNotAnInteger:
+                docs = paginator.page(1)
+            except EmptyPage:
+                docs = paginator.page(paginator.num_pages)
 
-        table_data = []
-        for doc in docs:
-            item = {
-                'id': doc.id,
-                'name': doc.name,
-                'plant_list': DocPublishData.objects.get(doc=doc).plant_name,
-                'parent': Doc.objects.get(id=doc.parent_doc).name if doc.parent_doc != 0 else '无',
-                'project_id': Project.objects.get(id=doc.top_doc).id,
-                'project_name': Project.objects.get(id=doc.top_doc).name,
-                'status': doc.status,
-                'editor_mode': doc.editor_mode,
-                'open_children': doc.open_children,
-                'create_user': doc.create_user.username,
-                'create_time': doc.create_time,
-                'modify_time': doc.modify_time
+            table_data = []
+            for doc in docs:
+                doc_push_data = DocPublishData.objects.filter(doc=doc)
+                print(doc_push_data)
+                if doc_push_data:
+                    plant_name_list = [push_data.plant_name for push_data in doc_push_data]
+                else:
+                    plant_name_list = []
+
+                item = {
+                    'id': doc.id,
+                    'name': doc.name,
+                    'plant_list': ','.join(plant_name_list),
+                    'parent': Doc.objects.get(id=doc.parent_doc).name if doc.parent_doc != 0 else '无',
+                    'project_id': Project.objects.get(id=doc.top_doc).id,
+                    'project_name': Project.objects.get(id=doc.top_doc).name,
+                    'status': doc.status,
+                    'editor_mode': doc.editor_mode,
+                    'open_children': doc.open_children,
+                    'create_user': doc.create_user.username,
+                    'create_time': doc.create_time,
+                    'modify_time': doc.modify_time
+                }
+                table_data.append(item)
+            resp_data = {
+                "code": 0,
+                "msg": "ok",
+                "count": doc_list.count(),
+                "data": table_data
             }
-            table_data.append(item)
-        resp_data = {
-            "code": 0,
-            "msg": "ok",
-            "count": doc_list.count(),
-            "data": table_data
-        }
-        return JsonResponse(resp_data)
+            return JsonResponse(resp_data)
+    except:
+        print(traceback.format_exc())
 
 
 # 后台管理 - 文档模板管理

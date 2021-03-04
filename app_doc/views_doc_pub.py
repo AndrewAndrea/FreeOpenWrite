@@ -30,11 +30,70 @@ from app_doc.spider.zhihu_publish import ZhiHuPublish
 def doc_publish_manage(request):
     try:
         if request.method == 'GET':
+            # 渠道列表
+            plant_list = Plant.objects.all()
+            # 已发布文档数量
+            published_doc_cnt = DocPublishData.objects.filter(create_user=request.user, status=1).count()
+            # 发布失败文档数量
+            draft_doc_cnt = DocPublishData.objects.filter(create_user=request.user, status=0).count()
+            # 所有文档数量
+            all_cnt = published_doc_cnt + draft_doc_cnt
             return render(request, 'app_doc/manage/manage_doc_publish.html', locals())
         if request.method == 'POST':
-            project_list = DocPublishData.objects.filter(create_user=request.user).order_by('-create_time')
+            kw = request.POST.get('kw', '')
+            plant_name = request.POST.get('plant_name', '')
+            status = request.POST.get('status', '')
+            if status == '-1':  # 全部文档
+                q_status = [0, 1]
+            elif status in ['0', '1']:
+                q_status = [int(status)]
+            else:
+                q_status = [0, 1]
+
+            if plant_name == '':
+                plant_name_list = DocPublishData.objects.filter(
+                    create_user=request.user).values_list('plant_name', flat=True)  # 自己创建的文集列表                                                                                                       flat=True)  # 协作的文集列表
+                q_plant_name_list = list(plant_name_list)
+            else:
+                q_plant_name_list = [plant_name]
+
+            page = request.POST.get('page', 1)
+            limit = request.POST.get('limit', 10)
+            # 没有搜索
+            if kw == '':
+                doc_push_list = DocPublishData.objects.filter(
+                    create_user=request.user,
+                    status__in=q_status,
+                    plant_name__in=q_plant_name_list
+                ).order_by('-create_time')
+            # 有搜索
+            else:
+                doc_push_list = DocPublishData.objects.filter(
+                    Q(doc__name__icontains=kw) | Q(doc__content__icontains=kw),
+                    create_user=request.user, status__in=q_status, plant_name__in=q_plant_name_list
+                ).order_by('-create_time')
+            # 渠道列表
+            plant_list = Plant.objects.all()
+            # 已发布文档数量
+            published_doc_cnt = DocPublishData.objects.filter(create_user=request.user, status=1).count()
+            # 发布失败文档数量
+            draft_doc_cnt = DocPublishData.objects.filter(create_user=request.user, status=0).count()
+            # 所有文档数量
+            all_cnt = published_doc_cnt + draft_doc_cnt
+
+            # 分页处理
+            paginator = Paginator(doc_push_list, limit)
+            page = request.GET.get('page', page)
+            try:
+                docs_push = paginator.page(page)
+            except PageNotAnInteger:
+                docs_push = paginator.page(1)
+            except EmptyPage:
+                docs_push = paginator.page(paginator.num_pages)
+
+            # project_list = DocPublishData.objects.filter(create_user=request.user).order_by('-create_time')
             table_data = []
-            for project in project_list:
+            for project in docs_push:
                 item = {
                     'id': project.id,
                     'name': project.doc.name,
@@ -50,7 +109,7 @@ def doc_publish_manage(request):
             resp_data = {
                 "code": 0,
                 "msg": "ok",
-                "count": project_list.count(),
+                "count": doc_push_list.count(),
                 "data": table_data
             }
             return JsonResponse(resp_data)
@@ -64,31 +123,41 @@ def doc_publish_manage(request):
 def del_doc_publish(request):
     try:
         doc_publish_id = request.POST.get('doc_publish_id', '')
+        range = request.POST.get('range', 'single')
         if doc_publish_id != '':
-            pro = DocPublishData.objects.get(id=doc_publish_id)
-            if request.user == pro.create_user:
-                plant_name = pro.plant_name
-                doc_publish_url = pro.doc_publish_url
-                plant = Plant.objects.filter(plant_name=plant_name)
-                cookies = CookiePlant.objects.get(plant=plant[0], create_user=request.user)
-                if plant_name == "CSDN":
-                    result = CSDNPublish(cookies).del_doc(doc_publish_url)
-                elif plant_name == "博客园":
-                    result = CNBlogPublish(cookies).del_doc(doc_publish_url)
-                elif plant_name == "思否":
-                    result = SegFaultPublish(cookies).del_doc(doc_publish_url)
-                elif plant_name == "知乎":
-                    result = ZhiHuPublish(cookies).del_doc(doc_publish_url)
-                else:
-                    return JsonResponse({'status': False, 'data': "非法请求"})
-                if result:
-                    Doc.objects.filter(id=pro.doc.id).update(plant_list=None)
-                    pro.delete()
-                    return JsonResponse({'status': True})
+            if range == 'single':
+                pro = DocPublishData.objects.get(id=doc_publish_id)
+                if request.user == pro.create_user:
+                    plant_name = pro.plant_name
+                    doc_publish_url = pro.doc_publish_url
+                    plant = Plant.objects.filter(plant_name=plant_name)
+                    cookies = CookiePlant.objects.get(plant=plant[0], create_user=request.user)
+                    if plant_name == "CSDN":
+                        result = CSDNPublish(cookies).del_doc(doc_publish_url)
+                    elif plant_name == "博客园":
+                        result = CNBlogPublish(cookies).del_doc(doc_publish_url)
+                    elif plant_name == "思否":
+                        result = SegFaultPublish(cookies).del_doc(doc_publish_url)
+                    elif plant_name == "知乎":
+                        result = ZhiHuPublish(cookies).del_doc(doc_publish_url)
+                    else:
+                        return JsonResponse({'status': False, 'data': "非法请求"})
+                    if result:
+                        Doc.objects.filter(id=pro.doc.id).update(plant_list=None)
+                        pro.delete()
+                        return JsonResponse({'status': True})
 
-                return JsonResponse({'status':False, 'data': '删除失败！'})
-            else:
-                return JsonResponse({'status':False,'data':'非法请求'})
+                    return JsonResponse({'status':False, 'data': '删除失败！'})
+                else:
+                    return JsonResponse({'status':False,'data':'非法请求'})
+            elif range == 'multi':
+                # docs = doc_publish_id.split(",")
+                # try:
+                #     DocPublishData.objects.filter(id__in=docs,create_user=request.user).update(status=3,modify_time=datetime.datetime.now())
+                #     Doc.objects.filter(parent_doc__in=docs).update(status=3,modify_time=datetime.datetime.now())
+                #     return JsonResponse({'status': True, 'data': '删除完成'})
+                # except:
+                return JsonResponse({'status': False, 'data': '当前功能还未完成！'})
         else:
             return JsonResponse({'status':False,'data':'参数错误'})
     except Exception as e:
@@ -305,5 +374,14 @@ def drawing_bed_setting(request):
                 return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
             else:
                 return JsonResponse({'status': False, 'data': '缺少必要参数！'})
+
+
+# 文章分发 ----- 获取文章阅读数、评论数点赞数
+@login_required()
+@require_POST
+@logger.catch(reraise=True)
+def article_all_num(request):
+    return JsonResponse({'status': False, 'data': '该功能还在完善中！'})
+
 
 

@@ -77,6 +77,7 @@ urlpatterns = [
     path('doc_publish_manage/', views_doc_pub.doc_publish_manage, name="doc_publish_manage"),  # 分发数据管理
     path('del_doc_publish/', views_doc_pub.del_doc_publish, name="del_doc_publish"),  # 删除分发数据
     path('article_all_distribution/', views_doc_pub.article_all_distribution, name="article_all_distribution"),  # 一键分发
+    path('article_all_num/', views_doc_pub.article_all_num, name="article_all_num"),  # 获取文章分发数据
     path('cookie_manage/', views_user.cookie_manage, name="cookie_manage"),  # cookie管理
     path('article_distribution/', views_user.article_distribution, name="article_distribution"),  # 文章分发
 

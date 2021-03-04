@@ -300,7 +300,7 @@ class DocPublishData(models.Model):
     doc = models.ForeignKey(Doc, on_delete=models.CASCADE)
     plant_name = models.CharField(verbose_name="渠道名称", max_length=50)
     doc_publish_url = models.CharField(verbose_name="文章地址", max_length=255)
-    # 是否默认 1：设为默认值0取消默认设置
+    # 是否默认 1：已发布 0 发布失败
     status = models.IntegerField(default=0, verbose_name="状态")
     read_num = models.IntegerField(default=0, verbose_name="访问数")
     star_num = models.IntegerField(default=0, verbose_name="点赞数")
