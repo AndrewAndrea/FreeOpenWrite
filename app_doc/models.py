@@ -318,8 +318,8 @@ class DocPublishData(models.Model):
 
 # 图床配置模型
 class DrawingBedSetting(models.Model):
-    name = models.CharField(verbose_name="配置名称", max_length=100, unique=True)
-    types = models.CharField(verbose_name="图床名称", max_length=10, unique=True)
+    name = models.CharField(verbose_name="配置名称", max_length=100)
+    types = models.CharField(verbose_name="图床名称", max_length=10)
     value = models.TextField(verbose_name='配置', null=True, blank=True)
     create_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     create_time = models.DateTimeField(auto_now=True, verbose_name='创建时间')
@@ -330,6 +330,9 @@ class DrawingBedSetting(models.Model):
     class Meta:
         verbose_name = '图床配置'
         verbose_name_plural = verbose_name
+        unique_together = (
+            ('create_user', 'types', 'name')
+        )
 
 
 # 用户各平台 cookie模型
