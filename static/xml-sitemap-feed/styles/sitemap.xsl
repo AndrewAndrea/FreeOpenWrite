@@ -41,7 +41,7 @@
 	</div>
 	<div id="footer">
 		<p>
-			<img src="data:image/gif;base64,R0lGODlhUAAPAJEAAGZmZv////9mAImOeSwAAAAAUAAPAAACoISPqcvtD0+YtNqLs968myCE4kiW5jkGw8q27gvDwYfWdq3G+i7T9w/M8Ya7GQAUoiSTEyYSKYA2nSKhdXUdCIlaXzRVDVdB0+dS2lJZ1bkt0Sgti6NysvM5jbq2ai2WywJHYrZUaEhIWJXm99foNiRI9XUoV4g4GJjJyEgBGAkEivIIyPUZeppCqorlheo6ulr00UFba3uLEaG7y9urUAAAOw%3D%3D" alt="XML Sitemap" title="XML Sitemap" /> 基于<a href="https://status301.net/wordpress-plugins/xml-sitemap-feed/">XML Sitemap &amp; Google News</a> 适配 <a href="https://gitee.com/msandrew/my-doc">MrDoc</a>。
+			<img src="data:image/gif;base64,R0lGODlhUAAPAJEAAGZmZv////9mAImOeSwAAAAAUAAPAAACoISPqcvtD0+YtNqLs968myCE4kiW5jkGw8q27gvDwYfWdq3G+i7T9w/M8Ya7GQAUoiSTEyYSKYA2nSKhdXUdCIlaXzRVDVdB0+dS2lJZ1bkt0Sgti6NysvM5jbq2ai2WywJHYrZUaEhIWJXm99foNiRI9XUoV4g4GJjJyEgBGAkEivIIyPUZeppCqorlheo6ulr00UFba3uLEaG7y9urUAAAOw%3D%3D" alt="XML Sitemap" title="XML Sitemap" /> 基于<a href="https://status301.net/wordpress-plugins/xml-sitemap-feed/">XML Sitemap &amp; Google News</a> 适配 <a href="https://gitee.com/msandrew/free-open-write">FreeOpenWrite</a>。
 		</p>
 	</div>
 </body>

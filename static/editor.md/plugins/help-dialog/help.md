@@ -1,11 +1,11 @@
 ##### MrDoc使用文档
 
-- [http://mrdoc.zmister.com](http://mrdoc.zmister.com)
+- [http://freeow.andrewblog.cn](http://freeow.andrewblog.cn)
 
 ##### MrDoc项目地址
 
-- [https://gitee.com/msandrew/my-doc](https://gitee.com/msandrew/my-doc)
-- [https://github.com/AndrewAndrea/mydoc](https://github.com/AndrewAndrea/mydoc)
+- [https://gitee.com/msandrew/free-open-write](https://gitee.com/msandrew/free-open-write)
+- [https://github.com/AndrewAndrea/FreeOpenWrite](https://github.com/AndrewAndrea/FreeOpenWrite)
 
 ##### Markdown语法教程 (Markdown syntax tutorial)
 
