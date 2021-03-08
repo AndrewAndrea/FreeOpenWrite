@@ -153,7 +153,7 @@ def upload_img(request):
     ##################
     try:
         dbs = DrawingBedSetting.objects.filter(name__contains="default_types", value__isnull=False, create_user=request.user)
-        bed_default_types = "basic"
+        bed_default_types = None
         if dbs.count() != 0:
             bed_default_types = dbs.get(name__contains="default_types").types
         img = request.FILES.get("editormd-image-file", None)  # 编辑器上传
