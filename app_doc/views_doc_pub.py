@@ -299,24 +299,17 @@ def article_all_distribution(request):
 @logger.catch()
 def drawing_bed_setting(request):
     # 图床管理页面
-    qiniu_settings = DrawingBedSetting.objects.filter(types="qiniu", create_user=request.user)
-    if qiniu_settings.count() == 8:
-        access_key = qiniu_settings.get(name='access_key')
-        secret_key = qiniu_settings.get(name='secret_key')
-        # secret_key.value = 'mcJ6xYJwBpmATMddxXTpypgiNwpJQMbUge3U_FsO'
-        # secret_key.value = '****************************************'
-        storage_space_name = qiniu_settings.get(name='storage_space_name')
-        visit_website = qiniu_settings.get(name="visit_website")
-        storage_area = qiniu_settings.get(name="storage_area")
-        url_suffix = qiniu_settings.get(name="url_suffix")
-        storage_path = qiniu_settings.get(name="storage_path")
-        default_types = qiniu_settings.get(name="default_types")
-    if request.method == 'GET':
-        return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
-    elif request.method == 'POST':
-        types = request.POST.get('type', None)
-        # 基础设置
-        if types == 'qiniu':
+    try:
+        if get_drawing_beds(request, 'upyun'):
+            upyun_access_key, upyun_secret_key, upyun_storage_space_name, upyun_visit_website, upyun_url_suffix, \
+            upyun_storage_path, upyun_default_types = get_drawing_beds(request, types='upyun')
+        if get_drawing_beds(request, 'qiniu'):
+            qiniu_access_key, qiniu_secret_key, qiniu_storage_space_name, qiniu_visit_website, qiniu_storage_area, \
+            qiniu_url_suffix, qiniu_storage_path, qiniu_default_types = get_drawing_beds(request, types='qiniu')
+        if request.method == 'GET':
+            return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
+        elif request.method == 'POST':
+            types = request.POST.get('type', None)
             access_key = request.POST.get('access_key', None)  # ak
             secret_key = request.POST.get('secret_key', None)  # sk
             storage_space_name = request.POST.get('storage_space_name', None)  # 存储空间名
@@ -325,55 +318,109 @@ def drawing_bed_setting(request):
             url_suffix = request.POST.get('url_suffix', None)  # 网址后缀
             storage_path = request.POST.get('storage_path', None)  # 存储路径
             default_types = request.POST.get('default_types', None)  # 存储路径
+            # 基础设置
+            if types == 'qiniu':
+                if access_key and secret_key and storage_space_name and visit_website and storage_area:
+                    drawing_bed_save_setting(request, access_key, secret_key, storage_space_name,
+                                             visit_website, url_suffix, storage_path, storage_area, default_types,
+                                             types)
+                    qiniu_access_key, qiniu_secret_key, qiniu_storage_space_name, qiniu_visit_website, qiniu_storage_area, \
+                    qiniu_url_suffix, qiniu_storage_path, qiniu_default_types = get_drawing_beds(request, types=types)
+                    return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
+                else:
+                    return JsonResponse({'status': False, 'data': '缺少必要参数！'})
+            # 又拍云
+            if types == 'upyun':
+                if access_key and secret_key and storage_space_name and visit_website:
+                    drawing_bed_save_setting(request, access_key, secret_key, storage_space_name,
+                                             visit_website, url_suffix, storage_path, storage_area, default_types,
+                                             types)
+                    upyun_access_key, upyun_secret_key, upyun_storage_space_name, upyun_visit_website, upyun_url_suffix, \
+                    upyun_storage_path, upyun_default_types = get_drawing_beds(request, types=types)
+                    return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
+                else:
+                    return JsonResponse({'status': False, 'data': '缺少必要参数！'})
 
-            if access_key and secret_key and storage_space_name and visit_website and storage_area:
-                # 更新sk
-                DrawingBedSetting.objects.update_or_create(
-                    name='access_key',
-                    defaults={'value': access_key, 'types': types, 'create_user': request.user}
-                )
-                # 更新sk
-                DrawingBedSetting.objects.update_or_create(
-                    name='secret_key',
-                    defaults={'value': secret_key, 'types': types, 'create_user': request.user}
-                )
-                # 更新存储空间名
-                DrawingBedSetting.objects.update_or_create(
-                    name='storage_space_name',
-                    defaults={'value': storage_space_name, 'types': types, 'create_user': request.user}
-                )
-                # 更新访问网址
-                DrawingBedSetting.objects.update_or_create(
-                    name='visit_website',
-                    defaults={'value': visit_website, 'types': types, 'create_user': request.user}
-                )
-                # 更新存储区域
-                DrawingBedSetting.objects.update_or_create(
-                    name='storage_area',
-                    defaults={'value': storage_area, 'types': types, 'create_user': request.user}
-                )
-                # 更新网址后缀
-                DrawingBedSetting.objects.update_or_create(
-                    name='url_suffix',
-                    defaults={'value': url_suffix, 'types': types, 'create_user': request.user}
-                )
-                # 更新存储路径
-                DrawingBedSetting.objects.update_or_create(
-                    name='storage_path',
-                    defaults={'value': storage_path, 'types': types, 'create_user': request.user}
-                )
-                # 更新是否为默认图床
-                DrawingBedSetting.objects.update_or_create(
-                    name='default_types',
-                    defaults={'value': default_types, 'types': types, 'create_user': request.user}
-                )
-                if default_types:
-                    # 当前默认图床如果有值，则修改其他图床的默认值为None
-                    DrawingBedSetting.objects.exclude(types__contains=types).filter(name='default_types').update(
-                        value=None)
-                return render(request, 'app_doc/manage/manage_drawing_bed_setting.html', locals())
-            else:
-                return JsonResponse({'status': False, 'data': '缺少必要参数！'})
+    except:
+        print(traceback.format_exc())
+        return JsonResponse({'status': False, 'data': '请求错误！'})
+
+
+def get_drawing_beds(request, types):
+    if types == 'upyun':
+        upyun_settings = DrawingBedSetting.objects.filter(types=types, create_user=request.user)
+        if upyun_settings.count() == 8:
+            upyun_access_key = upyun_settings.get(name=f'{types}_access_key')
+            upyun_secret_key = upyun_settings.get(name=f'{types}_secret_key')
+            upyun_storage_space_name = upyun_settings.get(name=f'{types}_storage_space_name')
+            upyun_visit_website = upyun_settings.get(name=f'{types}_visit_website')
+            upyun_url_suffix = upyun_settings.get(name=f'{types}_url_suffix')
+            upyun_storage_path = upyun_settings.get(name=f'{types}_storage_path')
+            upyun_default_types = upyun_settings.get(name=f'{types}_default_types')
+            return upyun_access_key, upyun_secret_key, upyun_storage_space_name, \
+                   upyun_visit_website, upyun_url_suffix, upyun_storage_path, upyun_default_types
+    if types == "qiniu":
+        qiniu_settings = DrawingBedSetting.objects.filter(types=types, create_user=request.user)
+        if qiniu_settings.count() == 8:
+            qiniu_access_key = qiniu_settings.get(name=f'{types}_access_key')
+            qiniu_secret_key = qiniu_settings.get(name=f'{types}_secret_key')
+            qiniu_storage_space_name = qiniu_settings.get(name=f'{types}_storage_space_name')
+            qiniu_visit_website = qiniu_settings.get(name=f'{types}_visit_website')
+            qiniu_storage_area = qiniu_settings.get(name=f'{types}_storage_area')
+            qiniu_url_suffix = qiniu_settings.get(name=f'{types}_url_suffix')
+            qiniu_storage_path = qiniu_settings.get(name=f'{types}_storage_path')
+            qiniu_default_types = qiniu_settings.get(name=f'{types}_default_types')
+            return qiniu_access_key, qiniu_secret_key, qiniu_storage_space_name, \
+                   qiniu_visit_website, qiniu_storage_area, qiniu_url_suffix, qiniu_storage_path, qiniu_default_types
+
+
+def drawing_bed_save_setting(request, access_key, secret_key, storage_space_name, visit_website,
+                             url_suffix, storage_path, storage_area, default_types, types):
+    # 更新sk
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_access_key',
+        defaults={'value': access_key, 'types': types, 'create_user': request.user}
+    )
+    # 更新sk
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_secret_key',
+        defaults={'value': secret_key, 'types': types, 'create_user': request.user}
+    )
+    # 更新存储空间名
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_storage_space_name',
+        defaults={'value': storage_space_name, 'types': types, 'create_user': request.user}
+    )
+    # 更新访问网址
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_visit_website',
+        defaults={'value': visit_website, 'types': types, 'create_user': request.user}
+    )
+    # 更新存储区域
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_storage_area',
+        defaults={'value': storage_area, 'types': types, 'create_user': request.user}
+    )
+    # 更新网址后缀
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_url_suffix',
+        defaults={'value': url_suffix, 'types': types, 'create_user': request.user}
+    )
+    # 更新存储路径
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_storage_path',
+        defaults={'value': storage_path, 'types': types, 'create_user': request.user}
+    )
+    # 更新是否为默认图床
+    DrawingBedSetting.objects.update_or_create(
+        name=f'{types}_default_types',
+        defaults={'value': default_types, 'types': types, 'create_user': request.user}
+    )
+    if default_types:
+        # 当前默认图床如果有值，则修改其他图床的默认值为None
+        DrawingBedSetting.objects.exclude(types=types,
+                                          create_user=request.user).filter(
+            name__contains='default_types').update(value=None)
 
 
 # 文章分发 ----- 获取文章阅读数、评论数点赞数

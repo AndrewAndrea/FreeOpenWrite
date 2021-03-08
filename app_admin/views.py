@@ -168,9 +168,17 @@ def register(request):
 def log_out(request):
     try:
         logout(request)
+        project_viewcode_list = []
+        for c in list(request.COOKIES.keys()):
+            if c.startswith('viewcode-'):
+                project_viewcode_list.append(c)
+        resp = redirect(request.META['HTTP_REFERER'])
+        for c in project_viewcode_list:
+            resp.delete_cookie(c)
+        return resp
     except Exception as e:
         logger.exception("注销异常")
-    return redirect(request.META['HTTP_REFERER'])
+        return redirect(request.META['HTTP_REFERER'])
 
 
 # 忘记密码
@@ -839,8 +847,6 @@ def admin_setting(request):
                 name = 'enable_login_check_code',
                 defaults={'value':enable_login_check_code,'types':'basic'}
             )
-
-
             return render(request, 'app_admin/admin_setting.html', locals())
         # 邮箱设置
         elif types == 'email':

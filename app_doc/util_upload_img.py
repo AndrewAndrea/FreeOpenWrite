@@ -11,7 +11,11 @@ from app_doc.models import Image, ImageGroup, Attachment, DrawingBedSetting
 from app_admin.models import SysSetting
 import requests
 import random
+from upyun import UpYun
 from qiniu import Auth, put_data
+
+
+from app_doc.views_doc_pub import get_drawing_beds
 
 
 @login_required()
@@ -27,7 +31,7 @@ def upload_ice_img(request):
     # formData.append('upload_type', "files");
     ##################
     dbs = DrawingBedSetting.objects.filter(name="default_types", value__isnull=False, create_user=request.user)
-    bed_default_types = "basic"
+    bed_default_types = None
     if dbs.count() != 0:
         bed_default_types = dbs.get(name="default_types").types
     try:
@@ -76,10 +80,10 @@ def ice_save_file(file_obj, user, bed_default_types):
     path_file = settings.MEDIA_ROOT + path_file
     # file_Url 是文件的url下发路径
     file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", "/")
-    if bed_default_types == 'qiniu':
-        file_url = upload_qiniu(file_name, file_obj.read())
+    if bed_default_types:
+        file_url = upload_drawing_bed(file_name, file_obj.read(), bed_default_types)
         if file_url is False:
-            return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+            return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
     else:
         with open(path_file, 'wb') as f:
             for chunk in file_obj.chunks():
@@ -123,10 +127,10 @@ def ice_url_img_upload(url, user, bed_default_types):
     r = requests.get(url, headers=header, stream=True)
 
     if r.status_code == 200:
-        if bed_default_types == 'qiniu':
-            file_url = upload_qiniu(file_name, r.content)
+        if bed_default_types:
+            file_url = upload_drawing_bed(file_name, r.content, bed_default_types)
             if file_url is False:
-                return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+                return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
         else:
             with open(path_file, 'wb') as f:
                 f.write(r.content)  # 保存文件
@@ -147,47 +151,50 @@ def upload_img(request):
     # {"success": 0, "message": "出错信息"}
     # {"success": 1, "url": "图片地址"}
     ##################
-    dbs = DrawingBedSetting.objects.filter(name="default_types", value__isnull=False, create_user=request.user)
-    bed_default_types = "basic"
-    if dbs.count() != 0:
-        bed_default_types = dbs.get(name="default_types").types
-    img = request.FILES.get("editormd-image-file", None)  # 编辑器上传
-    manage_upload = request.FILES.get('manage_upload', None)  # 图片管理上传
     try:
-        url_img = json.loads(request.body.decode())['url']
-    except:
-        url_img = None
-    dir_name = request.POST.get('dirname', '')
-    base_img = request.POST.get('base', None)
-    group_id = request.POST.get('group_id', 0)
-
-    if int(group_id) not in [0, -1]:
+        dbs = DrawingBedSetting.objects.filter(name__contains="default_types", value__isnull=False, create_user=request.user)
+        bed_default_types = "basic"
+        if dbs.count() != 0:
+            bed_default_types = dbs.get(name__contains="default_types").types
+        img = request.FILES.get("editormd-image-file", None)  # 编辑器上传
+        manage_upload = request.FILES.get('manage_upload', None)  # 图片管理上传
         try:
-            group_id = ImageGroup.objects.get(id=group_id)
+            url_img = json.loads(request.body.decode())['url']
         except:
-            group_id = None
-    else:
-        group_id = None
+            url_img = None
+        dir_name = request.POST.get('dirname', '')
+        base_img = request.POST.get('base', None)
+        group_id = request.POST.get('group_id', 0)
 
-    # 上传普通图片文件
-    if img:
-        result = img_upload(img, dir_name, request.user, bed_default_types)
-    # 图片管理上传
-    elif manage_upload:
-        result = img_upload(manage_upload, dir_name, request.user, bed_default_types,
-                            group_id=group_id)
-    # 上传base64编码图片
-    elif base_img:
-        result = base_img_upload(base_img, dir_name, request.user, bed_default_types)
-    # 上传图片URL地址
-    elif url_img:
-        if url_img.startswith("data:image"):  # 以URL形式上传的BASE64编码图片
-            result = base_img_upload(url_img, dir_name, request.user, bed_default_types)
+        if int(group_id) not in [0, -1]:
+            try:
+                group_id = ImageGroup.objects.get(id=group_id)
+            except:
+                group_id = None
         else:
-            result = url_img_upload(url_img, dir_name, request.user, bed_default_types)
-    else:
-        result = {"success": 0, "message": "上传出错"}
-    return HttpResponse(json.dumps(result), content_type="application/json")
+            group_id = None
+
+        # 上传普通图片文件
+        if img:
+            result = img_upload(request, img, dir_name, request.user, bed_default_types)
+        # 图片管理上传
+        elif manage_upload:
+            result = img_upload(request, manage_upload, dir_name, request.user, bed_default_types,
+                                group_id=group_id)
+        # 上传base64编码图片
+        elif base_img:
+            result = base_img_upload(request, base_img, dir_name, request.user, bed_default_types)
+        # 上传图片URL地址
+        elif url_img:
+            if url_img.startswith("data:image"):  # 以URL形式上传的BASE64编码图片
+                result = base_img_upload(request, url_img, dir_name, request.user, bed_default_types)
+            else:
+                result = url_img_upload(request, url_img, dir_name, request.user, bed_default_types)
+        else:
+            result = {"success": 0, "message": "上传出错"}
+        return HttpResponse(json.dumps(result), content_type="application/json")
+    except:
+        print(traceback.format_exc())
 
 
 # 目录创建
@@ -202,7 +209,7 @@ def upload_generation_dir(dir_name=''):
 
 
 # 普通图片上传
-def img_upload(files, dir_name, user, bed_default_types, group_id=None):
+def img_upload(request, files, dir_name, user, bed_default_types, group_id=None):
     # 允许上传文件类型
     allow_suffix = ["jpg", "jpeg", "gif", "png", "bmp", "webp"]
     file_suffix = files.name.split(".")[-1]  # 提取图片格式
@@ -222,10 +229,10 @@ def img_upload(files, dir_name, user, bed_default_types, group_id=None):
 
     relative_path = upload_generation_dir(dir_name)
     file_name = files.name.replace(file_suffix, '').replace('.', '') + '_' + str(int(time.time())) + '.' + file_suffix
-    if bed_default_types == 'qiniu':
-        file_url = upload_qiniu(file_name, files.read())
+    if bed_default_types:
+        file_url = upload_drawing_bed(request, file_name, files.read(), bed_default_types)
         if file_url is False:
-            return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+            return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
     else:
         path_file = os.path.join(relative_path, file_name)
         path_file = settings.MEDIA_ROOT + path_file
@@ -245,15 +252,15 @@ def img_upload(files, dir_name, user, bed_default_types, group_id=None):
 
 
 # base64编码图片上传
-def base_img_upload(files, dir_name, user, bed_default_types):
+def base_img_upload(request, files, dir_name, user, bed_default_types):
     files_str = files.split(';base64,')[-1]  # 截取图片正文
     files_base = base64.b64decode(files_str)  # 进行base64编码
     file_name = str(datetime.datetime.today()).replace(':', '').replace(' ', '_').split('.')[0] + '.png'  # 日期时间
 
-    if bed_default_types == 'qiniu':
-        file_url = upload_qiniu(file_name, files_base)
+    if bed_default_types:
+        file_url = upload_drawing_bed(request, file_name, files_base, bed_default_types)
         if file_url is False:
-            return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+            return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
     else:
         relative_path = upload_generation_dir(dir_name)
         path_file = os.path.join(relative_path, file_name)
@@ -272,7 +279,7 @@ def base_img_upload(files, dir_name, user, bed_default_types):
 
 
 # url图片上传
-def url_img_upload(url, dir_name, user, bed_default_types):
+def url_img_upload(request, url, dir_name, user, bed_default_types):
     relative_path = upload_generation_dir(dir_name)
     file_name = str(datetime.datetime.today()).replace(':', '').replace(' ', '_').split('.')[0] + '.png'  # 日期时间
     path_file = os.path.join(relative_path, file_name)
@@ -286,10 +293,10 @@ def url_img_upload(url, dir_name, user, bed_default_types):
     r = requests.get(url, headers=header, stream=True)
 
     if r.status_code == 200:
-        if bed_default_types == 'qiniu':
-            file_url = upload_qiniu(file_name, r.content)
+        if bed_default_types:
+            file_url = upload_drawing_bed(request, file_name, r.content, bed_default_types)
             if file_url is False:
-                return {"success": 0, "message": "上传七牛云失败，请检查配置信息是否正确！"}
+                return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
         else:
             with open(path_file, 'wb') as f:
                 f.write(r.content)  # 保存文件
@@ -311,32 +318,42 @@ def url_img_upload(url, dir_name, user, bed_default_types):
     # return {"success": 1, "url": file_url, 'message': '上传图片成功'}
 
 
-# 上传图片到七牛云
-def upload_qiniu(img_name, files):
-    qiniu_settings = DrawingBedSetting.objects.filter(types='qiniu')
-    if qiniu_settings.count() == 8:
-        access_key = qiniu_settings.get(name='access_key')
-        secret_key = qiniu_settings.get(name='secret_key')
-        storage_space_name = qiniu_settings.get(name='storage_space_name')
-        visit_website = qiniu_settings.get(name="visit_website")
-        storage_area = qiniu_settings.get(name="storage_area")
-        url_suffix = qiniu_settings.get(name="url_suffix")
-        storage_path = qiniu_settings.get(name="storage_path")
-        default_types = qiniu_settings.get(name="default_types")
-        access_key = access_key.value
-        secret_key = secret_key.value
-        # 构建鉴权对象
-        q = Auth(access_key, secret_key)
-        # 要上传的空间
-        bucket_name = storage_space_name.value
+def upload_drawing_bed(request, img_name, files, bed_default_types):
+    if bed_default_types == 'qiniu':
+        qiniu_settings = DrawingBedSetting.objects.filter(types=bed_default_types, create_user=request.user)
+        if qiniu_settings.count() == 8:
+            qiniu_access_key, qiniu_secret_key, qiniu_storage_space_name, qiniu_visit_website, qiniu_storage_area, \
+            qiniu_url_suffix, qiniu_storage_path, qiniu_default_types = get_drawing_beds(request, 'qiniu')
+            access_key = qiniu_access_key.value
+            secret_key = qiniu_secret_key.value
+            # 构建鉴权对象
+            q = Auth(access_key, secret_key)
+            # 要上传的空间
+            bucket_name = qiniu_storage_space_name.value
+            # 上传后保存的文件名
+            key = qiniu_storage_path.value + img_name
+            # 生成上传 Token，可以指定过期时间等
+            token = q.upload_token(bucket_name, key, 3600)
+            # 要上传文件的本地路径
+            ret, info = put_data(token, key, files)
+            if ret and info:
+                file_url = qiniu_visit_website.value + '/' + ret.get('key') + qiniu_url_suffix.value
+                return file_url
+            else:
+                return False
+    if bed_default_types == 'upyun':
+        upyun_access_key, upyun_secret_key, upyun_storage_space_name, upyun_visit_website, upyun_url_suffix, \
+        upyun_storage_path, upyun_default_types = get_drawing_beds(request, bed_default_types)
+        up = UpYun(upyun_storage_space_name.value, username=upyun_access_key.value,
+                   password=upyun_secret_key.value)
         # 上传后保存的文件名
-        key = storage_path.value + img_name
-        # 生成上传 Token，可以指定过期时间等
-        token = q.upload_token(bucket_name, key, 3600)
-        # 要上传文件的本地路径
-        ret, info = put_data(token, key, files)
-        if ret and info:
-            file_url = visit_website.value + '/' + ret.get('key') + url_suffix.value
+        key = upyun_storage_path.value + img_name
+        # headers = {'x-gmkerl-rotate': '180'}
+        res = up.put(key=key, value=files, checksum=False)
+        if res.get('file-type'):
+            file_url = upyun_visit_website.value + '/' + key + upyun_url_suffix.value
             return file_url
         else:
             return False
+        # print(res)
+

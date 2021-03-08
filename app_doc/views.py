@@ -13,19 +13,19 @@ from app_doc.models import Project,Doc,DocTemp
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.db import transaction
+from django.utils.html import strip_tags
 from loguru import logger
+from app_doc.report_utils import *
+from app_admin.models import UserOptions,SysSetting
+from app_admin.decorators import check_headers,allow_report_file
 import datetime
 import traceback
 import re
 import json
 import random
-from app_doc.report_utils import *
-from app_admin.models import UserOptions,SysSetting
-from app_admin.decorators import check_headers,allow_report_file
 import os.path
 import base64
 import hashlib
-from django.utils.html import strip_tags
 import markdown
 
 
@@ -919,8 +919,13 @@ def doc(request,pro_id,doc_id):
 
             # 获取文档内容
             try:
-                doc = Doc.objects.get(id=int(doc_id),status=1) # 文档信息
+                doc = Doc.objects.get(id=int(doc_id),status__in=[0,1]) # 文档信息
                 doc_tags = DocTag.objects.filter(doc=doc) # 文档标签信息
+                if doc.status == 0 and doc.create_user != request.user:
+                    raise ObjectDoesNotExist
+                elif doc.status == 0 and doc.create_user == request.user:
+                    doc.name  = '【预览草稿】'+ doc.name
+
             except ObjectDoesNotExist:
                 return render(request, '404.html')
             # 获取文档分享信息
