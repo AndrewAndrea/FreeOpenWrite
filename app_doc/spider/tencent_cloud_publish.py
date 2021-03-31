@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# @Time : 2021/3/3 10:07
+# @Time : 2021/3/9 15:33
 # @Author : zj
-# @File : zhihu_publish.py
+# @File : tencent_cloud_publish.py
 # @Project : spider_publish
 import json
 import os
@@ -17,7 +17,8 @@ from app_doc.spider.utils.tools import headers_to_dict
 from lxml import etree
 
 
-class ZhiHuPublish:
+# 腾讯云专栏
+class TencentCloudPublish:
     def __init__(self, cookie):
         self.sess = requests.session()
         self.cookie = cookie
@@ -46,8 +47,6 @@ class ZhiHuPublish:
         art_id = r_json.get('id')
         return art_id
 
-    # def get_category(self):
-
     def get_article_tag(self, tags, art_id):
         tag_flag = True
         for i in tags.split(','):
@@ -67,7 +66,7 @@ class ZhiHuPublish:
                 tag_flag = False
         return tag_flag
 
-    def publish_content(self, tags, title, content, plant_config):
+    def publish_content(self, tags, title, content):
         art_id = self.get_article_id(title)
         publish_url = f'https://zhuanlan.zhihu.com/api/articles/{art_id}/draft'
         referer = f'https://zhuanlan.zhihu.com/p/{art_id}/edit'
@@ -76,13 +75,7 @@ class ZhiHuPublish:
         res = self.sess.patch(url=publish_url, json=form_data)
         # print('实时保存结果：', res.text)
         if res.status_code == 200:
-            if tags:
-                tag_result = self.get_article_tag(tags, art_id)
-            else:
-                if plant_config:
-                    tag_result = self.get_article_tag(plant_config[0].tags, art_id)
-                else:
-                    return False
+            tag_result = self.get_article_tag(tags, art_id)
             if tag_result:
                 real_publish_url = f'https://zhuanlan.zhihu.com/api/articles/{art_id}/publish'
                 json_data = {

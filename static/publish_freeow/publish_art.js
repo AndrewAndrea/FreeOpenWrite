@@ -1,153 +1,6 @@
-{% extends 'app_doc/user/user_base.html' %}
-{% load static %}
-{% load i18n %}
-{% block title %}文章分发{% endblock %}
-{% block content %}
-    <div class="layui-card">
-        <div class="layui-card-body">
-            <div class="layui-card-header" style="margin-bottom: 10px;">
-                <div class="layui-row">
-            <span style="font-size:18px;">发布平台 cookie 管理
-            </span>
-                </div>
-            </div>
-            <div class="layui-row">
-                <form action="" method="get">
-                    <div class="layui-form-item">
-                        <!--<div class="layui-input-inline">-->
-                        <!--<input type="text" name="kw" id="kw" placeholder="输入文集内容" autocomplete="off" class="layui-input">-->
-                        <!--</div>-->
-                        <!--<button class="layui-btn layui-btn-normal" type="submit">搜索</button>-->
+// Ajax默认配置
 
-                        <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="createRegisterCode()"
-                                type="button"><i class="layui-icon layui-icon-addition"></i>新增发布平台 cookie
-                        </button>
-                        <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="onePushAll()"
-                                type="button"><i class="layui-icon layui-icon-addition"></i>一键分发
-                        </button>
-                    </div>
-                    {#            <div class="layui-form-item">#}
-                    {#              <label class="layui-form-label">平台</label>#}
-                    {#              <div class="layui-input-inline">#}
-                    {#                <select name="plant_id" lay-verify="required"  lay-filter="plant" id="plant">#}
-                    {#                    <option value="">按平台筛选</option>#}
-                    {#                    {% for p in plant_list %}#}
-                    {#                        <option value="{{ p.id }}" >{{ p.plant_name }}</option>#}
-                    {#                    {% endfor %}#}
-                    {#                </select>#}
-                    {#              </div>#}
-                    {#            </div>#}
-                </form>
-            </div>
-            <div class="layui-row" lay-skin="line">
-                <table class="layui-table" id="register-code-list" lay-skin="nob">
-                    <colgroup>
-                        <col width="150">
-                        <col width="100">
-                        <col width="120">
-                        <col width="120">
-                        <col width="80">
-                        <col width="400">
-                    </colgroup>
-                    <thead>
-                    <tr>
-                        <th>平台cookie</th>
-                        <th>平台名称</th>
-                        <th>状态</th>
-                        <th>创建用户</th>
-                        <th>创建时间</th>
-                        <th>操作</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for code in codes %}
-                        <tr>
-                            <td style="min-width: 150px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;
-            white-space: nowrap; cursor: pointer" title="{{ code.cookie }}">{{ code.cookie }}</td>
-                            <td>{{ code.plant.plant_name }}</td>
-                            <td>
-                                {% if code.status == 1 %}
-                                    <i class="layui-icon layui-icon-ok-circle" style="color:#1E9FFF;"></i> 可用
-                                {% elif code.status == 0 %}
-                                    <i class="layui-icon layui-icon-close-fill" style="color: #FF5722;"></i> 不可用
-                                {% endif %}
-                            </td>
-                            <td>{{ code.create_time }}</td>
-                            <td>{{ code.create_user }}</td>
-                            <td>
-
-                                <button class="layui-btn layui-btn-normal layui-btn-sm"
-                                        onclick="updateCookie('{{ code.id }}')" type="button"><i
-                                        class="layui-icon layui-icon-refresh"></i>更新 cookie
-                                </button>
-                                <button class="layui-btn layui-btn-normal layui-btn-sm"
-                                        onclick="publishCookie('{{ code.id }}', '{{ code.plant.plant_name }}')"
-                                        type="button"><i
-                                        class="layui-icon layui-icon-addition"></i>发布文章到 {{ code.plant.plant_name }}
-                                </button>
-                                {#                <a href="javascript:void(0);" onclick="updateCookie('{{code.id}}')">#}
-                                {#                    <i class="layui-icon layui-icon-delete"></i>更新#}
-                                {#                </a>#}
-
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <!-- 分页 -->
-            <div class="layui-row">
-                <div class="pagination">
-                <span class="step-links">
-                    {% if codes.has_previous %}
-                        <a href="?page={{ codes.previous_page_number }}&kw={{ codes.kw }}"
-                           class="layui-btn layui-btn-normal layui-btn-xs">上一页</a>
-                    {% endif %}
-                    <span class="current">
-                        当前页： {{ codes.number }} 共 {{ codes.paginator.num_pages }} 页
-                    </span>
-                    {% if codes.has_next %}
-                        <a href="?page={{ projects.next_page_number }}&kw={{ projects.kw }}"
-                           class="layui-btn layui-btn-xs">下一页</a>
-                    {% endif %}
-                </span>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endblock %}
-
-{% block custom_script %}
-
-    <!-- 文档名称 -->
-    <script type="text/html" id="doc-name">
-        {% verbatim %}
-        {{#if (d.status == 1) { }}
-        <span class="layui-badge-dot layui-bg-blue"></span>
-        <a href="/project-{{d.project_id}}/doc-{{d.id}}" target="_blank">{{d.name}}</a>
-        {{# }else if(d.status == 0){ }}
-        <!-- <i class="layui-icon layui-icon-release" style="cursor: pointer;" onclick="fastPubDoc('{{d.id}}')" title="草稿状态，点击一键发布"></i>&nbsp; -->
-        <span class="layui-badge-dot layui-bg-orange"></span>
-        <a href="/modify_doc/{{d.id}}/" target="_blank" title="修改文档：{{d.name}}">{{ d.name }} </a>
-        {{# } }}
-        {% endverbatim %}
-    </script>
-
-    <!-- 文档状态 -->
-    <script type="text/html" id="doc-status">
-        {% verbatim %}
-        {{#if (d.status == 1) { }}
-        <span class="layui-badge-rim">已发布</span>
-        {{# }else if(d.status == 0){ }}
-        <!-- <i class="layui-icon layui-icon-release" style="cursor: pointer;" onclick="fastPubDoc('{{d.id}}')" title="草稿状态，点击一键发布"></i>&nbsp; -->
-        <span class="layui-badge-rim" style="cursor: pointer;" onclick="fastPubDoc('{{d.id}}')" title="点击一键发布">草稿</span>
-        {{# } }}
-        {% endverbatim %}
-    </script>
-    {#    <script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>#}
-    {#    <script src="{% static 'publish_freeow/publish_art.js' %}"></script>#}
-    <script>
-        layui.use(['table', 'jquery', 'form', 'layer', 'element'], function () {
+layui.use(['table', 'jquery', 'form', 'layer', 'element'], function () {
             let table = layui.table;
             let form = layui.form;
             let $ = layui.jquery;
@@ -156,14 +9,14 @@
             $.ajaxSetup({
                 data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
             });
-            //新增cookie
+            // 新增cookie
             createRegisterCode = function () {
                 layer.open({
                     type: 1,
                     title: '新增 cookie',
                     area: '300px;',
                     id: 'createRegCode',//配置ID
-                    content: '<div style="margin:10px;"><input class="layui-input" id="plant_cookie" type="text" placeholder="输入平台 cookie"/></br><select name="plant_id" lay-verify="required"  lay-filter="plant" id="plant">\n' +
+                    content: '<div style="margin:10px;"><input class="layui-input" id="plant_cookie" type="text" placeholder="输入平台 cookie"/><select name="plant_id" lay-verify="required"  lay-filter="plant" id="plant">\n' +
                         '                    <option value="">按平台筛选</option>\n' +
                         '                    {% for p in plant_list %}\n'+
                             '                        <option value="{{ p.id }}" >{{ p.plant_name }}</option>\n'+
@@ -211,14 +64,16 @@
                         }
                         $.post("{% url 'cookie_manage' %}", data, function (r) {
                             if (r.status) {
-                                layer.msg(r.data, {icon: 1, time: 50000}, function () {
+                                //删除成功，刷新页面
+                                // {#window.location.reload();#}
+                                layer.msg(r.data, function () {
                                     window.location.reload();
                                 });
                                 //layer.close(index)
                             } else {
-                                layer.msg(r.data, {icon: 2, time: 50000}, function () {
-                                    window.location.reload();
-                                });
+                                //删除失败，提示
+                                console.log(r)
+                                layer.msg(r.data)
                             }
                         })
                     },
@@ -229,6 +84,9 @@
                 var doc_id = '';
                 var tags = '';
                 var categorys = '';
+                $.ajaxSetup({
+                data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+            });
                 layer.open({
                     type: 1,
                     title: '文章分发',
@@ -245,10 +103,10 @@
                                 {type: 'radio', width: 20},
                                 {title: '文档名称', field: 'name', align: 'left', templet: "#doc-name", minWidth: 280},
                                 {title: '状态', field: 'status', align: 'left', templet: "#doc-status", width: 90},
-                                {title: '已分发平台', field: 'plant_list', align: 'left', templet: "#doc-plant-list"},
+                                {title: '已分发平台',field: 'plant_list',align: 'left',templet:"#doc-plant-list"},
                                 {title: '文集', field: 'project_name', align: 'left', templet: "#project-role"},
                                 {title: '文档作者', field: 'create_user', align: 'left',}
-                            ]
+                              ]
                         ]
                         // 渲染表格
                         table.render({
@@ -262,12 +120,12 @@
                             toolbar: '#doc-toolbar',
                             defaultToolbar: ['filter']
                         });
-                        table.on('radio(doc-table)', function (obj) {
+                            table.on('radio(doc-table)', function (obj) {
                             doc_id = obj.data.id;
-                            if (plant_name === 'CSDN' || plant_name === '思否' || plant_name === '知乎' || plant_name === '掘金') {
+                            if(plant_name === 'CSDN' || plant_name === '思否' || plant_name === '知乎'){
                                 layer.open({
                                     type: 1,
-                                    title: '请输入文章标签',
+                                    title: '请输入文章标签：',
                                     area: '300px;',
                                     id: 'createRegCode',//配置ID
                                     content: '<div style="margin:10px;"><input class="layui-input" id="tags" type="text" placeholder="请输入文章标签，以英文逗号隔开"/></div>',
@@ -278,11 +136,9 @@
                                         layer.close(index)
                                     },
                                 });
-                            } else if (plant_name === '博客园') {
-
+                            }else if(plant_name === '博客园'){
                                 tags = $("#tags").val();
-
-                            }
+                        }
                         });
 
                     },
@@ -299,15 +155,14 @@
                             'doc_id': doc_id,
                             'tags': tags,
                             'code_id': code_id
-                        }
+                        };
                         $.post("{% url 'article_distribution' %}", data, function (r) {
                             if (r.status) {
-                                {#layer.msg(result_str, {icon: 1, time: 10000});#}
-                                layer.msg(r.data, {icon: 1, time: 5000}, function () {
+                                layer.msg(r.data, function () {
                                     window.location.reload();
                                 });
                                 //删除成功，刷新页面
-                                {#window.location.reload();#}
+                                // {#window.location.reload();#}
                                 //layer.close(index)
                             } else {
                                 //删除失败，提示
@@ -338,24 +193,25 @@
                                 {type: 'radio', width: 20},
                                 {title: '文档名称', field: 'name', align: 'left', templet: "#doc-name", minWidth: 280},
                                 {title: '状态', field: 'status', align: 'left', templet: "#doc-status", width: 90},
-                                {title: '已分发平台', field: 'plant_list', align: 'left', templet: "#doc-plant-list"},
+                                {title: '已分发平台',field: 'plant_list',align: 'left',templet:"#doc-plant-list"},
                                 {title: '文集', field: 'project_name', align: 'left', templet: "#project-role"},
                                 {title: '文档作者', field: 'create_user', align: 'left',}
-                            ]
+                              ]
                         ]
                         // 渲染表格
                         table.render({
                             elem: '#doc-table',
                             method: 'post',
                             type: 1,
-                            url: "{% url 'doc_manage' %}",
+                            url: '/manage_doc/',
+                            // url: 'doc_manage/',
                             page: true,
                             cols: cols,
                             skin: 'line',
                             toolbar: '#doc-toolbar',
                             defaultToolbar: ['filter']
                         });
-                        table.on('radio(doc-table)', function (obj) {
+                            table.on('radio(doc-table)', function (obj) {
                             doc_id = obj.data.id;
                             layer.open({
                                 type: 1,
@@ -388,20 +244,16 @@
                         }
                         $.post("{% url 'article_all_distribution' %}", data, function (r) {
                             if (r.status) {
-                                var result_str = '';
-                                for (var item in r.result){
-                                    result_str += r.result[item] + '</br>';
-                                }
-                                layer.msg(result_str, {icon: 1, time: 5000});
-                                {#window.location.href = '/doc_publish_manage'#}
-
+                                layer.msg(r.result, function () {
+                                    window.location.href='/doc_publish_manage';
+                                });
                                 //删除成功，刷新页面
-                                {#window.location.reload();#}
+                                // {#window.location.reload();#}
                                 //layer.close(index)
                             } else {
                                 //删除失败，提示
-                                {#console.log(r)#}
-                                layer.msg(r.result)
+                                console.log(r)
+                                layer.msg(r.data)
                             }
                         })
                     },
@@ -409,5 +261,3 @@
             }
 
         })
-    </script>
-{% endblock %}

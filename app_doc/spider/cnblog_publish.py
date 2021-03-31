@@ -10,7 +10,7 @@ import hmac
 import base64
 import execjs
 from hashlib import sha256
-from app_doc.spider.utils.tools import headers_to_dict
+from app_doc.spider.utils.tools import headers_to_dict, cookie_to_dict
 
 
 class CNBlogPublish:
@@ -23,6 +23,7 @@ class CNBlogPublish:
             referer: https://i.cnblogs.com/posts/edit
             user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36
         """
+        self.xsrf_token = cookie_to_dict(cookie).get('XSRF-TOKEN')
         self.sess.headers = headers_to_dict(base_header)
 
     def get_blog_id(self):
@@ -47,14 +48,20 @@ class CNBlogPublish:
                 return res.json()
         return None
 
-    def publish_content(self, tags, markdowncontent, title, is_markdown):
-        tags = None
+    def publish_content(self, tags, markdowncontent, title, is_markdown, plant_config):
         utc_now = arrow.utcnow()
         date_published = str(utc_now).split('+')[0][:-3] + 'Z'
-        x_blog_id = self.get_blog_id()
-        if x_blog_id:
-            self.sess.headers.update({'x-blog-id': str(x_blog_id)})
+        # x_blog_id = self.get_blog_id()
+        # if x_blog_id:
+        #     self.sess.headers.update({'x-blog-id': str(x_blog_id)})
+        self.sess.headers.update({'x-xsrf-token': self.xsrf_token})
         url = 'https://i.cnblogs.com/api/posts'
+        category_id = None
+        if plant_config:
+            category_id = plant_config[0].category_value
+        if not tags:
+            if plant_config:
+                tags = plant_config[0].tags
         form_data = {
             "id": None,
             "postType": 1,
@@ -62,7 +69,7 @@ class CNBlogPublish:
             "title": title,
             "url": None,
             "postBody": markdowncontent,
-            "categoryIds": [tags] if tags else None,
+            "categoryIds": [category_id] if category_id else None,
             "inSiteCandidate": False,
             "inSiteHome": False,
             "siteCategoryId": None,
@@ -76,7 +83,7 @@ class CNBlogPublish:
             "isUpdateDateAdded": False,
             "entryName": None,
             "description": None,
-            "tags": None,
+            "tags": [tag for tag in tags.split(',')] if tags else None,
             "password": None,
             "datePublished": date_published,
             "isMarkdown": is_markdown,
@@ -97,11 +104,12 @@ class CNBlogPublish:
 
     def del_doc(self, art_url: str):
         art_id = art_url.rsplit('/', 1)[1].split('.html')[0]
-        x_blog_id = self.get_blog_id()
-        if x_blog_id:
-            self.sess.headers.update({'x-blog-id': str(x_blog_id)})
-            doc_publish_url = f"https://i.cnblogs.com/api/posts/{art_id}"
-            res = self.sess.delete(doc_publish_url)
-            if res.status_code == 204:
-                return True
+        # x_blog_id = self.get_blog_id()
+        # if x_blog_id:
+        #     self.sess.headers.update({'x-blog-id': str(x_blog_id)})
+        self.sess.headers.update({'x-xsrf-token': self.xsrf_token})
+        doc_publish_url = f"https://i.cnblogs.com/api/posts/{art_id}"
+        res = self.sess.delete(doc_publish_url)
+        if res.status_code == 204:
+            return True
         return False

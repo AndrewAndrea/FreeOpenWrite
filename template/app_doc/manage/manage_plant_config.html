@@ -1,0 +1,205 @@
+{% extends 'app_doc/user/user_base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}{% trans "渠道配置" %}{% endblock %}
+{% block content %}
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <table id="doc-table" lay-filter="doc-table"></table>
+        </div>
+    </div>
+    <!-- 表格工具栏 -->
+    <script type="text/html" id="doc-toolbar">
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="addConfig">
+            <i class="layui-icon layui-icon-addition"></i>新增配置
+        </button>
+    </script>
+
+
+    <!-- 修改时间 -->
+    <script type="text/html" id="doc-create-time">
+        {% verbatim %}
+        {{layui.util.toDateString(d.create_time,  "yyyy-MM-dd HH:mm:ss")}}
+        {% endverbatim %}
+    </script>
+
+    <!-- 发布文章类型 -->
+    <script type="text/html" id="art-type">
+        {% verbatim %}
+            {{# if (d.art_type == 1) { }}
+                <span class="layui-badge-rim">原创</span>
+            {{# }else if(d.art_type == 2){ }}
+                <span class="layui-badge-rim">转载</span>
+            {{# }else if(d.art_type == 3){ }}
+                <span class="layui-badge-rim">翻译</span>
+            {{# } }}
+        {% endverbatim %}
+    </script>
+
+    <!-- 发布形式 -->
+    <script type="text/html" id="art-publish-type">
+        {% verbatim %}
+            {{#if (d.art_publish_type == 1) { }}
+                <span class="layui-badge-rim">公开</span>
+            {{# }else if(d.art_publish_type == 2){ }}
+                <span class="layui-badge-rim">私密</span>
+            {{# }else if(d.art_publish_type == 3){ }}
+                <span class="layui-badge-rim">粉丝可见</span>
+            {{# }else if(d.art_publish_type == 4){ }}
+                <span class="layui-badge-rim">VIP可见</span>
+             {{# }else { }}
+                <span class="layui-badge-rim">未配置</span>
+            {{# } }}
+        {% endverbatim %}
+    </script>
+
+    <!-- 单个文档操作 -->
+    <script type="text/html" id="doc-bar">
+        {% verbatim %}
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i
+                class="layui-icon layui-icon-delete"></i></button>
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="refresh"><i
+                class="layui-icon layui-icon-refresh"></i></button>
+        {% endverbatim %}
+    </script>
+    {#    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="check_look">查看数据详情</button>#}
+{% endblock %}
+{% block custom_script %}
+    <script>
+        layui.use(['table', 'form', 'jquery', 'dtree', 'layer'], function () {
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.jquery;
+            let dtree = layui.dtree;
+            var layer = layui.layer;
+            $.ajaxSetup({
+                data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+            });
+            let cols = [
+                [
+                    {type: 'checkbox', width: 20},
+
+                    {title: '渠道名称', field: 'plant_name', align: 'center', width: 90},
+                    {title: '分类', field: 'category', align: 'center'},
+                    {title: '子分类', field: 'sub_category', align: 'center'},
+                    {title: '文章标签', field: 'tags', align: 'center'},
+                    {title: '文章类型', field: 'art_type', align: 'center', templet: "#art-type"},
+                    {title: '文章来源', field: 'art_source_url', align: 'center'},
+                    {title: '发布形式', field: 'art_publish_type', align: 'center', templet: "#art-publish-type"},
+                    {title: '创建时间', field: 'create_time', align: 'center', templet: "#create-time"},
+                    {title: '操作', toolbar: '#doc-bar', align: 'center', minWidth: 90, fixed: 'right'}]
+            ]
+            // 渲染表格
+            table.render({
+                elem: '#doc-table',
+                method: 'post',
+                where: {
+                    'type': 1,
+                },
+                url: "{% url 'plant_config_manage' %}",
+                page: true,
+                cols: cols,
+                skin: 'line',
+                toolbar: '#doc-toolbar',
+                defaultToolbar: ['filter']
+            });
+            // 删除分发数据
+            delConfig = function (config_id) {
+                layer.open({
+                    type: 1,
+                    title: '删除分发记录',
+                    area: '300px;',
+                    id: 'delPro',//配置ID
+                    content: '<div style="margin-left:10px;">是否删除当前配置！</div>',
+                    btn: ['确定', '取消'], //添加按钮
+                    btnAlign: 'c', //按钮居中
+                    yes: function (index, layero) {
+                        layer.load(1);
+                        data = {
+                            'type': 'delete',
+                            'config_id': config_id,
+                        }
+                        $.post("{% url 'plant_config_manage' %}", data, function (r) {
+                            layer.closeAll('loading')
+                            if (r.status) {
+                                layer.msg(r.data, function () {
+                                    window.location.reload();
+                                })
+
+                                //layer.close(index)
+                            } else {
+                                layer.msg(r.data)
+                            }
+                        })
+                    },
+                });
+            };
+            // 添加渠道配置
+            addConfig = function (config_id) {
+                layer.open({
+                    type: 2,
+                    {#title: '新增配置',#}
+                    area: ['700px', '450px'],
+                    id: 'createRegCode',//配置ID
+                    content: '/plant_config_html/' + config_id + '/',
+                    {#btn: ['确定', '取消'], //添加按钮#}
+                    {#btnAlign: 'c', //按钮居中#}
+                    yes: function (index, layero) {
+                        data = {
+                            'types': 1,
+                            'plant_cookie': $("#plant_cookie").val(),
+                            'plant_id': $("#plant").val(),
+                        }
+                        $.post("{% url 'cookie_manage' %}", data, function (r) {
+                            layer.closeAll('loading');
+                            if (r.status) {
+                                //新增成功，刷新页面
+                                window.location.reload();
+                                //layer.close(index)
+                            } else {
+                                //新增失败，提示
+                                console.log(r)
+                                layer.msg(r.data)
+                            }
+                        })
+                    },
+                });
+
+            };
+
+            // 监听文集筛选
+            form.on('select(plant)', function (data) {
+                console.log('选择渠道：', data.value); //得到被选中的值
+                table.reload('doc-table', {
+                    where: {
+                        'type': 1, 'plant_name': data.value,
+                    },
+                })
+            });
+            // 监听状态筛选
+            form.on('radio(doc_status)', function (data) {
+                console.log(data.value); //被点击的radio的value值
+                table.reload('doc-table', {
+                    where: {
+                        'type': 1, 'status': data.value,
+                    },
+                })
+            });
+            // 侦听文档删除按钮
+            table.on("tool(doc-table)", function (obj) {
+                if (obj.event === 'remove') {
+                    // console.log(obj)
+                    delConfig(obj.data.id)
+                } else if (obj.event === 'refresh') {
+                    addConfig(obj.data.id)
+                }
+            });
+            // 侦听表格工具栏
+            table.on("toolbar(doc-table)", function (obj) {
+                if (obj.event === 'addConfig') { // 新增文集
+                    addConfig(0);
+                }
+            });
+        })
+    </script>
+{% endblock %}

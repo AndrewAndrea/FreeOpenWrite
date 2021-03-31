@@ -22,8 +22,8 @@ class CSDNPublish:
         self.sess = requests.session()
         self.cookie = cookie
 
-    def gen_header(self, base_url):
-        x_ca_nonce, signature = self._de_sign(base_url)
+    def gen_header(self, base_url, method):
+        x_ca_nonce, signature = self._de_sign(base_url, method)
         header = f"""
                 accept: */*
                 accept-language: zh-CN,zh;q=0.9
@@ -39,22 +39,46 @@ class CSDNPublish:
             """
         return header
 
-    def publish_content(self, tags, title, markdowncontent, content):
+    def publish_content(self, tags, title, markdowncontent, content, plant_config):
         self.markdowncontent, self.content = self.img_upload(markdowncontent=markdowncontent, content=content)
         base_url = "/blog-console-api/v3/mdeditor/saveArticle"
-        self.sess.headers = headers_to_dict(self.gen_header(base_url))
+        self.sess.headers = headers_to_dict(self.gen_header(base_url, method='POST'))
         url = 'https://bizapi.csdn.net/blog-console-api/v3/mdeditor/saveArticle'
+        if not tags and not plant_config:
+            return False
+        if not tags:
+            tags = plant_config[0].tags
+        type_name = 'original'
+        original_link = ''
+        readType = 'public'
+        if plant_config:
+            type = plant_config[0].art_type
+            art_pub_type = plant_config[0].art_publish_type
+            if art_pub_type == 1:
+                readType = 'public'
+            elif art_pub_type == 2:
+                readType = 'private'
+            elif art_pub_type == 3:
+                readType = 'read_need_vip'
+            if type == 1:
+                type_name = 'original'
+            elif type == 2:
+                type_name = 'repost'
+                original_link = plant_config[0].art_source_url
+            elif type == 3:
+                type_name = 'translated'
+                original_link = plant_config[0].art_source_url
         form_data = {
             "title": title,
             "markdowncontent": self.markdowncontent,
             "content": self.content,
-            "readType": "public",
+            "readType": readType,  # 私密private vip可见 read_need_vip
             "tags": tags,
             "status": 0,
-            "categories": "",
-            "type": "original",
-            "original_link": "",
-            "authorized_status": False,
+            "categories": plant_config[0].category_value if plant_config else "",
+            "type": type_name,
+            "original_link": original_link,
+            "authorized_status": True if original_link else False,
             "not_auto_saved": "1",
             "source": "pc_mdeditor"
         }
@@ -63,14 +87,25 @@ class CSDNPublish:
             return res.text
         return None
 
-    def _de_sign(self, base_url):
+    # 获取个人分类
+    def get_category(self):
+        get_category_url = 'https://bizapi.csdn.net/blog-console-api/v3/editor/getBaseInfo'
+        base_url = '/blog-console-api/v3/editor/getBaseInfo'
+        self.sess.headers = headers_to_dict(self.gen_header(base_url, method='GET'))
+        res = self.sess.get(get_category_url)
+        if res.text and res.status_code == 200:
+            categoty_list = res.json().get('data').get('categorys')
+            return categoty_list
+        return None
+
+    def _de_sign(self, base_url, method):
         path = os.getcwd()
         path_js = path + '/app_doc/spider/web_js/csdn_x_ca.js'
         x_ca_nonce = execjs.compile(open(path_js, 'r', encoding='utf8').read()).call('f')
         appsecret = '9znpamsyl2c7cdrr9sas0le9vbc3r6ba'
         md5 = ''
         text_sign = ''
-        text_sign += "POST" + '\n'
+        text_sign += method + '\n'
         text_sign += "*/*" + '\n'
         text_sign += md5 + '\n'
         text_sign += "application/json" + '\n'
@@ -108,7 +143,7 @@ class CSDNPublish:
                     "url": src
                 }
                 base_url = "/blog-console-api/v3/image/transfer"
-                self.sess.headers = headers_to_dict(self.gen_header(base_url))
+                self.sess.headers = headers_to_dict(self.gen_header(base_url, method='POST'))
                 res = self.sess.post(url=upload_url, json=form_data)
                 if res.text:
                     r_json = res.json()
@@ -129,7 +164,7 @@ class CSDNPublish:
         art_id = art_url.rsplit('/', 1)[1]
         del_url = 'https://bizapi.csdn.net/blog-console-api/v1/article/del'
         base_url = "/blog-console-api/v1/article/del"
-        self.sess.headers = headers_to_dict(self.gen_header(base_url))
+        self.sess.headers = headers_to_dict(self.gen_header(base_url, method='POST'))
         form_data = {"article_id": art_id, "deep": "false"}
         res = self.sess.post(del_url, json=form_data)
         if res.text:

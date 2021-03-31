@@ -31,9 +31,13 @@ from app_doc.spider.cnblog_publish import CNBlogPublish
 from app_doc.spider.csdn_publish import CSDNPublish
 from app_doc.spider.segfault_publish import SegFaultPublish
 from app_doc.spider.zhihu_publish import ZhiHuPublish
+from app_doc.spider.juejin_publish import JueJinPublish
 
 
 # 替换前端传来的非法字符
+from app_doc.views_doc_pub import pub_spider
+
+
 def validateTitle(title):
   rstr = r"[\/\\\:\*\?\"\<\>\|\[\]]" # '/ \ : * ? " < > |'
   new_title = re.sub(rstr, "_", title) # 替换为下划线
@@ -70,8 +74,10 @@ def cookie_manage(request):
         # types表示操作的类型，1表示新增、2表示修改
         if int(types) == 1:
             try:
-                plant_cookie = request.POST.get('plant_cookie')  # cookie
-                plant_id = request.POST.get('plant_id')  # 平台id
+                plant_cookie = request.POST.get('plant_cookie', None)  # cookie
+                plant_id = request.POST.get('plant_id', None)  # 平台id
+                if not plant_cookie or not plant_id:
+                    return JsonResponse({'status': False, 'data': '新增失败！'})
                 plant = Plant.objects.filter(id=int(plant_id), status=1)
                 if plant:
                     is_true = CookiePlant.objects.filter(plant=plant[0], create_user=request.user)
@@ -138,7 +144,7 @@ def article_distribution(request):
         doc_plant_name_list = DocPublishData.objects.filter(doc=doc[0])
         if doc_plant_name_list:
             for data in doc_plant_name_list:
-                plant_name_list.append(data.get('plant_name'))
+                plant_name_list.append(data.plant_name)
         # 查询底部模板，如果有默认的模板，则自动拼接到文章结尾发布
         bottom = DocBottomConfiguration.objects.filter(is_default=True, create_user=request.user)
         if bottom.count():
@@ -154,63 +160,14 @@ def article_distribution(request):
             is_markdown = False
         if doc_plant_list and plant_name in doc_plant_list:
             return JsonResponse({'status': False, 'data': f'当前文章在 {plant_name} 平台已发布'})
+        plant_config = PlatformConfiguration.objects.filter(create_user=request.user, plant__plant_name=plant_name)
         if doc_create_user == cookie_user and cookie_user == request.user:
-            if plant_name == 'CSDN':
-                result = CSDNPublish(plant_cookie).publish_content(tags=doc_tags, title=doc_name,
-                                                                   markdowncontent=doc_pre_content,
-                                                                   content=doc_content)
-                result_json = json.loads(result)
-                code = result_json.get('code')
-                msg = result_json.get('msg')
-                publish_url = result_json.get('data').get('url')
-                if code == 200 and msg == 'success' and publish_url:
-                    pub_status = 1
-                else:
-                    pub_status = 0
-            elif plant_name == '博客园':
-                cnblog_ = CNBlogPublish(plant_cookie)
-                result = cnblog_.publish_content(tags=doc_tags, title=doc_name,
-                                                 markdowncontent=doc_pre_content, is_markdown=is_markdown)
-                result_json = json.loads(result)
-                publish_url = result_json.get('url')
-                if publish_url:
-                    publish_url = 'https:' + publish_url
-                    pub_status = 1
-                else:
-                    pub_status = 0
-            elif plant_name == '思否':
-                seg_token = plant_cookie
-                seg_pub = SegFaultPublish(seg_token=seg_token)
-                result = seg_pub.publish_content(tags=doc_tags, markdowncontent=doc_pre_content, title=doc_name)
-                if result == 'need_login':
-                    cookie.update(status=0)
-                    return JsonResponse({'status': False, 'data': '发布失败，请更换 cookie 后重新发布！'})
-                r_json = json.loads(result)
-                msg = r_json.get('msg')
-                title = r_json.get('title')
-                seg_data = r_json.get('data')
-                if title:
-                    return JsonResponse({'status': False, 'data': title})
-                if seg_data:
-                    article_id = seg_data.get('id')
-                else:
-                    return JsonResponse({'status': False, 'data': "发布失败！"})
-                article_status = r_json.get('data').get('status')
-                publish_url = 'https://segmentfault.com/a/' + str(article_id)
-                pub_status = 1
-            elif plant_name == '知乎':
-
-                zhi_hu_pub = ZhiHuPublish(cookie=plant_cookie)
-                result = zhi_hu_pub.publish_content(tags=doc_tags, title=doc_name, content=doc_content)
-
-                r_json = json.loads(result)
-                publish_url = r_json.get('url')
-                title = r_json.get('title')
-                seg_data = r_json.get('data')
-                pub_status = 1
-            else:
-                result = None
-                return JsonResponse({'status': False, 'data': '不支持当前平台！'})
+            result, publish_url, pub_status = pub_spider(plant_name, plant_cookie, doc_tags=doc_tags, doc_name=doc_name,
+                                                         doc_pre_content=doc_pre_content, doc_content=doc_content,
+                                                         plant_config=plant_config, is_markdown=is_markdown)
+            if result == 'need_login':
+                cookie.update(status=0)
+                return JsonResponse({'status': False, 'data': '发布失败，请更换 cookie 后重新发布！'})
 
             if result:
                 DocPublishData.objects.create(
@@ -221,7 +178,7 @@ def article_distribution(request):
                     create_user=request.user
                 )
                 return JsonResponse({'status': True, 'data': '发布成功'})
-            return JsonResponse({'status': False, 'data': '发布失败'})
+            return JsonResponse({'status': False, 'data': '发布失败!cookie 失效或没有设置文章标签'})
         else:
             return JsonResponse({'status': False, 'data': '该文章不是你的哦！'})
     except ObjectDoesNotExist:
@@ -351,6 +308,55 @@ def user_center_menu(request):
             "href": reverse('manage_overview'),
         },
         {
+            "id": "my_plant_manage",
+            "title": "渠道分发",
+            "icon": "layui-icon layui-icon-component",
+            "type": 0,
+            "href": "",
+            "children": [
+                {
+                    "id": "doc_cookie_manage",
+                    "title": "文章分发",
+                    "icon": "layui-icon layui-icon-face-smile",
+                    "type": 1,
+                    "openType": "_iframe",
+                    "href": reverse("cookie_manage")
+                },
+                {
+                    "id": "doc_publish_manage",
+                    "title": "分发数据",
+                    "icon": "layui-icon layui-icon-face-smile",
+                    "type": 1,
+                    "openType": "_iframe",
+                    "href": reverse("doc_publish_manage")
+                },
+                {
+                    "id": "plant_config_manage",
+                    "title": "渠道配置",
+                    "icon": "layui-icon layui-icon-face-smile",
+                    "type": 1,
+                    "openType": "_iframe",
+                    "href": reverse("plant_config_manage")
+                },
+                {
+                    "id": "bottom_template_manage",
+                    "title": "底部模板",
+                    "icon": "layui-icon layui-icon-face-smile",
+                    "type": 1,
+                    "openType": "_iframe",
+                    "href": reverse("bottom_template_manage")
+                },
+                {
+                    "id": "drawing_bed_setting",
+                    "title": "图床配置",
+                    "icon": "layui-icon layui-icon-face-smile",
+                    "type": 1,
+                    "openType": "_iframe",
+                    "href": reverse("drawing_bed_setting")
+                },
+            ]
+        },
+        {
             "id": "my_project",
             "title": "我的文集",
             "icon": "layui-icon layui-icon-component",
@@ -397,38 +403,6 @@ def user_center_menu(request):
                     "type": 1,
                     "openType": "_iframe",
                     "href": reverse("manage_doc")
-                },
-                {
-                    "id": "doc_publish_manage",
-                    "title": "分发数据管理",
-                    "icon": "layui-icon layui-icon-face-smile",
-                    "type": 1,
-                    "openType": "_iframe",
-                    "href": reverse("doc_publish_manage")
-                },
-                {
-                    "id": "doc_cookie_manage",
-                    "title": "cookie 管理",
-                    "icon": "layui-icon layui-icon-face-smile",
-                    "type": 1,
-                    "openType": "_iframe",
-                    "href": reverse("cookie_manage")
-                },
-                {
-                    "id": "bottom_template_manage",
-                    "title": "底部模板",
-                    "icon": "layui-icon layui-icon-face-smile",
-                    "type": 1,
-                    "openType": "_iframe",
-                    "href": reverse("bottom_template_manage")
-                },
-                {
-                    "id": "drawing_bed_setting",
-                    "title": "图床配置",
-                    "icon": "layui-icon layui-icon-face-smile",
-                    "type": 1,
-                    "openType": "_iframe",
-                    "href": reverse("drawing_bed_setting")
                 },
                 {
                     "id": "doc_template",

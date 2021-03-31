@@ -22,7 +22,7 @@ from loguru import logger
 import re
 
 
-apply_plant_list = ['CSDN', '博客园', '思否', '知乎']
+apply_plant_list = ['CSDN', '博客园', '思否', '知乎', '掘金']
 
 
 # 返回验证码图片
@@ -578,7 +578,7 @@ def admin_doc(request):
             table_data = []
             for doc in docs:
                 doc_push_data = DocPublishData.objects.filter(doc=doc)
-                print(doc_push_data)
+                # print(doc_push_data)
                 if doc_push_data:
                     plant_name_list = [push_data.plant_name for push_data in doc_push_data]
                 else:
@@ -709,7 +709,7 @@ def change_pwd(request):
         try:
             password = request.POST.get('password', None)
             password2 = request.POST.get('password2', None)
-            print(password, password2)
+            # print(password, password2)
             if password and password == password2:
                 if len(password) >= 6:
                     user = User.objects.get(id=request.user.id)

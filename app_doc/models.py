@@ -351,3 +351,28 @@ class CookiePlant(models.Model):
         verbose_name = '平台cookie管理'
         verbose_name_plural = verbose_name
 
+
+# 平台配置模型
+class PlatformConfiguration(models.Model):
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE)
+    category_name = models.CharField(verbose_name="分类（个人分类、文集）", max_length=50, null=True, blank=True)
+    category_value = models.CharField(verbose_name="分类（个人分类、文集）值", max_length=50, null=True, blank=True)
+    sub_category_name = models.CharField(verbose_name="子分类", max_length=50, null=True, blank=True)
+    sub_category_value = models.CharField(verbose_name="子分类值", max_length=50, null=True, blank=True)
+    tags = models.CharField(verbose_name="标签", max_length=255, null=True, blank=True)
+    art_type = models.CharField(verbose_name="文章类型（原创、转载、翻译）", max_length=50, null=True, blank=True)
+    art_source_url = models.CharField(verbose_name="转载和翻译需要添加文章来源", max_length=255, null=True, blank=True)
+    art_publish_type = models.CharField(verbose_name="发布形式", max_length=255, null=True, blank=True)
+    create_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    create_time = models.DateTimeField(auto_now_add=True)
+    modify_time = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.plant.plant_name
+
+    class Meta:
+        verbose_name = '平台配置'
+        verbose_name_plural = verbose_name
+        unique_together = ('plant', 'create_user')
+
+

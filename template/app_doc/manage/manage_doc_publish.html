@@ -3,258 +3,298 @@
 {% load i18n %}
 {% block title %}{% trans "已分发管理" %}{% endblock %}
 {% block content %}
-<div class="layui-card">
-    <div class="layui-card-header">{% trans "高级筛选" %}</div>
-    <div class="layui-card-body">
-        <div class="layui-form">
-            <div class="layui-form-item">
-              <label class="layui-form-label">{% trans "关键词" %}</label>
-              <div class="layui-input-inline">
-                <input type="text" name="kw"  placeholder="请输入标题" autocomplete="off" class="layui-input">
-              </div>
-              <button class="pear-btn pear-btn-primary pear-btn-sm" id="search">{% trans "搜索" %}</button>
-            </div>
-            <div class="layui-form-item">
-              <label class="layui-form-label">{% trans "渠道" %}</label>
-              <div class="layui-input-inline">
-                <select name="plant" lay-verify="required"  lay-filter="plant" id="plant">
-                    <option value="">{% trans "按渠道筛选" %}</option>
-                    {% for p in plant_list %}
-                        <option value="{{ p.plant_name }}">{{ p.plant_name }}</option>
-                    {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="layui-form-item">
-              <label class="layui-form-label">{% trans "状态" %}</label>
-              <div class="layui-input-block">
-                <input type="radio" name="status" title="发布失败({{draft_doc_cnt}})" value="0"  lay-skin="primary" lay-filter="doc_status">
-                <input type="radio" name="status" title="已发布({{published_doc_cnt}})" value="1" lay-skin="primary" lay-filter="doc_status">
-              </div>
+    <div class="layui-card">
+        <div class="layui-card-header">{% trans "高级筛选" %}</div>
+        <div class="layui-card-body">
+            <div class="layui-form">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">{% trans "关键词" %}</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="kw" placeholder="请输入标题" autocomplete="off" class="layui-input">
+                    </div>
+                    <button class="pear-btn pear-btn-primary pear-btn-sm" id="search">{% trans "搜索" %}</button>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">{% trans "渠道" %}</label>
+                    <div class="layui-input-inline">
+                        <select name="plant" lay-verify="required" lay-filter="plant" id="plant">
+                            <option value="">{% trans "按渠道筛选" %}</option>
+                            {% for p in plant_list %}
+                                <option value="{{ p.plant_name }}">{{ p.plant_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">{% trans "状态" %}</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="status" title="发布失败({{ draft_doc_cnt }})" value="0" lay-skin="primary"
+                               lay-filter="doc_status">
+                        <input type="radio" name="status" title="已发布({{ published_doc_cnt }})" value="1"
+                               lay-skin="primary" lay-filter="doc_status">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="layui-card">
-    <div class="layui-card-body">
-        <table id="doc-table" lay-filter="doc-table"></table>
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <table id="doc-table" lay-filter="doc-table"></table>
+        </div>
     </div>
-</div>
 
-<!-- 表格工具栏 -->
-<script type="text/html" id="doc-toolbar">
-    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="GetDocData">
-        <i class="layui-icon layui-icon-addition"></i>获取已分发文章数据
-    </button>
-    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove">
-        <i class="layui-icon layui-icon-addition"></i>批量删除
-    </button>
-</script>
+    <!-- 表格工具栏 -->
+    <script type="text/html" id="doc-toolbar">
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="GetDocData">
+            <i class="layui-icon layui-icon-addition"></i>获取已分发文章数据
+        </button>
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove">
+            <i class="layui-icon layui-icon-addition"></i>批量删除
+        </button>
+    </script>
 
-<!-- 文档链接：在已发布平台的链接 -->
-<script type="text/html" id="doc-name">
-    {% verbatim %}
+    <!-- 文档链接：在已发布平台的链接 -->
+    <script type="text/html" id="doc-name">
+        {% verbatim %}
         <span class="layui-badge-dot layui-bg-blue"></span>
         <a href="{{d.doc_publish_url}}" target="_blank">{{d.name}}</a>
-    {% endverbatim %}
-</script>
+        {% endverbatim %}
+    </script>
 
-<!-- 文档状态 -->
-<script type="text/html" id="status">
-    {% verbatim %}
+    <!-- 文档状态 -->
+    <script type="text/html" id="status">
+        {% verbatim %}
         {{#if (d.status == 1) { }}
-            <span class="layui-badge-rim">已发布</span>
+        <span class="layui-badge-rim">已发布</span>
         {{# }else if(d.status == 0){ }}
-            <span class="layui-badge-rim" style="cursor: pointer;" onclick="fastPubDoc('{{d.id}}')" title="点击重新发布">发布失败</span>
+        <span class="layui-badge-rim" style="cursor: pointer;" onclick="fastPubDoc('{{d.id}}')"
+              title="点击重新发布">发布失败</span>
         {{# } }}
-    {% endverbatim %}
-</script>
+        {% endverbatim %}
+    </script>
 
-<!-- 修改时间 -->
-<script type="text/html" id="doc-create-time">
-    {% verbatim %}
-    {{layui.util.toDateString(d.create_time,  "yyyy-MM-dd HH:mm:ss")}}
-    {% endverbatim %}
-</script>
+    <!-- 修改时间 -->
+    <script type="text/html" id="doc-create-time">
+        {% verbatim %}
+        {{layui.util.toDateString(d.create_time,  "yyyy-MM-dd HH:mm:ss")}}
+        {% endverbatim %}
+    </script>
 
-<!-- 单个文档操作 -->
-<script type="text/html" id="doc-bar">
-    {% verbatim %}
-    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
-    {% endverbatim %}
-</script>
-{#    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="check_look">查看数据详情</button>#}
+    <!-- 单个文档操作 -->
+    <script type="text/html" id="doc-bar">
+        {% verbatim %}
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i
+                class="layui-icon layui-icon-delete"></i></button>
+        <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="refresh"><i
+                class="layui-icon layui-icon-refresh"></i></button>
+        {% endverbatim %}
+    </script>
+    {#    <button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="check_look">查看数据详情</button>#}
 {% endblock %}
 {% block custom_script %}
-<script>
-    layui.use(['table', 'form', 'jquery', 'dtree','layer'], function() {
-        let table = layui.table;
-        let form = layui.form;
-        let $ = layui.jquery;
-        let dtree = layui.dtree;
-        var layer = layui.layer;
-        $.ajaxSetup({
-            data: {csrfmiddlewaretoken: '{{ csrf_token }}' },
-        });
-        let cols = [
-            [
-            {type: 'checkbox',width:20},
-                {title: '文档名称',field: 'name',align: 'center',templet:"#doc-name",minWidth:100},
-                {title: '状态',field: 'status',align: 'center',templet:"#status", width: 90},
-                {title: '渠道名称',field: 'plant_name',align: 'center',templet:"#plant_name", width: 90},
-                {title: '文章链接',field: 'doc_publish_url',align: 'center',templet:"#doc_publish_url"},
-                {title: '阅读数',field: 'read_num',align: 'center',templet:"#read_num"},
-                {title: '点赞数',field: 'star_num',align: 'center',templet:"#star_num"},
-                {title: '评论数',field: 'comment_num',align: 'center',templet:"#comment_num"},
-                {title: '分发时间',field: 'create_time',align: 'center',templet:"#doc-create-time"},
-                {title: '操作',toolbar: '#doc-bar',align: 'center', minWidth:90, fixed: 'right'}            ]
-        ]
-        // 渲染表格
-        table.render({
-            elem: '#doc-table',
-            method:'post',
-            where:{
-                'type':1,
-            },
-            url: "{% url 'doc_publish_manage' %}",
-            page: true,
-            cols: cols,
-            skin: 'line',
-            toolbar: '#doc-toolbar',
-            defaultToolbar: ['filter']
-        });
-        // 删除分发数据
-        delDoc = function(doc_id){
-            layer.open({
-                type:1,
-                title:'删除分发记录',
-                area:'300px;',
-                id:'delPro',//配置ID
-                content:'<div style="margin-left:10px;">警告：此操作将删除此分发记录，并删除所在渠道已发布的文章！</div>',
-                btn:['确定','取消'], //添加按钮
-                btnAlign:'c', //按钮居中
-                yes:function (index,layero) {
-                    layer.load(1);
-                    data = {
-                        'doc_publish_id':doc_id,
-                    }
-                    $.post("{% url 'del_doc_publish' %}",data,function(r){
-                        layer.closeAll('loading')
-                        if(r.status){
-                            window.location.reload();
-                            //layer.close(index)
-                        }else{
-                            layer.msg(r.data)
+    <script>
+        layui.use(['table', 'form', 'jquery', 'dtree', 'layer'], function () {
+            let table = layui.table;
+            let form = layui.form;
+            let $ = layui.jquery;
+            let dtree = layui.dtree;
+            var layer = layui.layer;
+            $.ajaxSetup({
+                data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+            });
+            let cols = [
+                [
+                    {type: 'checkbox', width: 20},
+                    {title: '文档名称', field: 'name', align: 'center', templet: "#doc-name", minWidth: 100},
+                    {title: '状态', field: 'status', align: 'center', templet: "#status", width: 90},
+                    {title: '渠道名称', field: 'plant_name', align: 'center', templet: "#plant_name", width: 90},
+                    {title: '文章链接', field: 'doc_publish_url', align: 'center', templet: "#doc_publish_url"},
+                    {title: '阅读数', field: 'read_num', align: 'center', templet: "#read_num"},
+                    {title: '点赞数', field: 'star_num', align: 'center', templet: "#star_num"},
+                    {title: '评论数', field: 'comment_num', align: 'center', templet: "#comment_num"},
+                    {title: '分发时间', field: 'create_time', align: 'center', templet: "#doc-create-time"},
+                    {title: '操作', toolbar: '#doc-bar', align: 'center', minWidth: 90, fixed: 'right'}]
+            ]
+            // 渲染表格
+            table.render({
+                elem: '#doc-table',
+                method: 'post',
+                where: {
+                    'type': 1,
+                },
+                url: "{% url 'doc_publish_manage' %}",
+                page: true,
+                cols: cols,
+                skin: 'line',
+                toolbar: '#doc-toolbar',
+                defaultToolbar: ['filter']
+            });
+            // 删除分发数据
+            delDoc = function (doc_id) {
+                layer.open({
+                    type: 1,
+                    title: '删除分发记录',
+                    area: '300px;',
+                    id: 'delPro',//配置ID
+                    content: '<div style="margin-left:10px;">警告：此操作将删除此分发记录，并删除所在渠道已发布的文章！</div>',
+                    btn: ['确定', '取消'], //添加按钮
+                    btnAlign: 'c', //按钮居中
+                    yes: function (index, layero) {
+                        layer.load(1);
+                        data = {
+                            'doc_publish_id': doc_id,
+                        }
+                        $.post("{% url 'del_doc_publish' %}", data, function (r) {
+                            {#layer.closeAll('loading')#}
+                            if (r.status) {
+                                layer.msg(r.data, {icon: 1, time: 3000}, function () {
+                                    window.location.reload();
+                                });
+
+                                //layer.close(index)
+                            } else {
+                                layer.msg(r.data, {icon: 2, time: 3000}, function () {
+                                    window.location.reload();
+                                })
+                            }
+                        })
+                    },
+                });
+            };
+            // 批量删除分发数据
+            batchRemoveDoc = function (obj) {
+                let data = table.checkStatus(obj.config.id).data;
+                if (data.length === 0) {
+                    layer.msg("未选中任何文档", {
+                        icon: 3,
+                        time: 1000
+                    });
+                    return false;
+                }
+                let doc_id = "";
+                for (let i = 0; i < data.length; i++) {
+                    doc_id += data[i].id + ",";
+                }
+                doc_id = doc_id.substr(0, doc_id.length - 1);
+                // console.log(pro_id)
+                layer.confirm('确定要删除这些文档？', {
+                    icon: 3,
+                    title: '提示'
+                }, function (index) {
+                    layer.close(index);
+                    let loading = layer.load();
+                    $.ajax({
+                        url: "{% url 'del_doc_publish' %}",
+                        dataType: 'json',
+                        type: 'post',
+                        data: {'doc_publish_id': doc_id, 'range': 'multi'},
+                        success: function (r) {
+                            layer.close(loading);
+                            if (r.status) {
+                                layer.msg("删除成功", {
+                                    icon: 1,
+                                    time: 1000
+                                }, function () {
+                                    table.reload('doc-table');
+                                });
+                            } else {
+                                layer.msg(r.data, {
+                                    icon: 2,
+                                    time: 1000
+                                });
+                            }
                         }
                     })
-                },
-            });
-        };
-        // 批量删除分发数据
-        batchRemoveDoc = function(obj) {
-            let data = table.checkStatus(obj.config.id).data;
-            if (data.length === 0) {
-                layer.msg("未选中任何文档", {
-                    icon: 3,
-                    time: 1000
                 });
-                return false;
-            }
-            let doc_id = "";
-            for (let i = 0; i < data.length; i++) {
-                doc_id += data[i].id + ",";
-            }
-            doc_id = doc_id.substr(0, doc_id.length - 1);
-            // console.log(pro_id)
-            layer.confirm('确定要删除这些文档？', {
-                icon: 3,
-                title: '提示'
-            }, function(index) {
-                layer.close(index);
-                let loading = layer.load();
-                $.ajax({
-                    url: "{% url 'del_doc_publish' %}",
-                    dataType: 'json',
-                    type: 'post',
-                    data:{'doc_publish_id':doc_id,'range':'multi'},
-                    success: function(r) {
-                        layer.close(loading);
-                        if (r.status) {
-                            layer.msg("删除成功", {
-                                icon: 1,
-                                time: 1000
-                            }, function() {
-                                table.reload('doc-table');
-                            });
-                        } else {
-                            layer.msg(r.data, {
-                                icon: 2,
-                                time: 1000
-                            });
-                        }
-                    }
-                })
-            });
-        };
-        // 获取已分发文章数据
-        GetDocData = function(){
+            };
+            // 获取已分发文章数据
+            GetDocData = function () {
 
-                $.post("{% url 'article_all_num' %}",function(r){
+                $.post("{% url 'article_all_num' %}", function (r) {
                     layer.closeAll('loading')
-                    if(r.status){
+                    if (r.status) {
                         window.location.reload();
                         //layer.close(index)
-                    }else{
+                    } else {
                         layer.msg(r.data)
                     }
                 })
 
-        };
-        // 监听文集筛选
-        form.on('select(plant)', function(data){
-            console.log('选择渠道：',data.value); //得到被选中的值
-            table.reload('doc-table',{
-                    where:{
-                    'type':1,'plant_name':data.value,
-                },
-            })
-        });
-        // 监听状态筛选
-        form.on('radio(doc_status)', function(data){
-            console.log(data.value); //被点击的radio的value值
-            table.reload('doc-table',{
-                    where:{
-                    'type':1,'status':data.value,
-                },
-            })
-        });
-        // 监听搜索按钮
-        $("#search").click(function(){
-            table.reload('doc-table',{
-                where:{
-                    'type':1,'kw':$("input[name=kw]").val(),
-                },
-            })
-        });
+            };
+            // 更新已分发文章pv数据
+            refresh_data = function (doc_id) {
+                layer.open({
+                    type: 1,
+                    title: '刷新数据',
+                    area: '300px;',
+                    id: 'updatePro',//配置ID
+                    content: '<div style="margin-left:10px;">警告：此操作将删除此分发记录，并删除所在渠道已发布的文章！</div>',
+                    btn: ['确定', '取消'], //添加按钮
+                    btnAlign: 'c', //按钮居中
+                    yes: function (index, layero) {
+                        layer.load(1);
+                        data = {
+                            'doc_publish_id': doc_id,
+                        }
+                        $.post("{% url 'del_doc_publish' %}", data, function (r) {
+                            layer.closeAll('loading')
+                            if (r.status) {
+                                window.location.reload();
+                                //layer.close(index)
+                            } else {
+                                layer.msg(r.data)
+                            }
+                        })
+                    },
+                });
+            };
+            // 监听文集筛选
+            form.on('select(plant)', function (data) {
+                console.log('选择渠道：', data.value); //得到被选中的值
+                table.reload('doc-table', {
+                    where: {
+                        'type': 1, 'plant_name': data.value,
+                    },
+                })
+            });
+            // 监听状态筛选
+            form.on('radio(doc_status)', function (data) {
+                console.log(data.value); //被点击的radio的value值
+                table.reload('doc-table', {
+                    where: {
+                        'type': 1, 'status': data.value,
+                    },
+                })
+            });
+            // 监听搜索按钮
+            $("#search").click(function () {
+                table.reload('doc-table', {
+                    where: {
+                        'type': 1, 'kw': $("input[name=kw]").val(),
+                    },
+                })
+            });
 
-        // 侦听文档删除按钮
-        table.on("tool(doc-table)",function(obj){
-            if (obj.event === 'remove') {
-                // console.log(obj)
-                delDoc(obj.data.id)
-            }
-        });
-        // 侦听表格工具栏
-        table.on("toolbar(doc-table)",function(obj){
-            if (obj.event === 'add') { // 新增文集
-                createProject();
-            }else if(obj.event === 'batchRemove'){ // 批量删除文集
-                batchRemoveDoc(obj)
-            }else if(obj.event === 'GetDocData'){ // 批量删除文集
-                GetDocData()
-            }
-        });
-    })
-</script>
+            // 侦听文档删除按钮
+            table.on("tool(doc-table)", function (obj) {
+                if (obj.event === 'remove') {
+                    // console.log(obj)
+                    delDoc(obj.data.id)
+                } else if (obj.event === 'refresh') {
+                    refresh_data(obj.data.id)
+                }
+            });
+            // 侦听表格工具栏
+            table.on("toolbar(doc-table)", function (obj) {
+                if (obj.event === 'add') { // 新增文集
+                    createProject();
+                } else if (obj.event === 'batchRemove') { // 批量删除文集
+                    batchRemoveDoc(obj)
+                } else if (obj.event === 'GetDocData') { // 批量删除文集
+                    GetDocData()
+                }
+            });
+        })
+    </script>
 {% endblock %}

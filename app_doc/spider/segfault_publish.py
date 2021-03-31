@@ -55,13 +55,25 @@ class SegFaultPublish:
             return draft_id
         return
 
-    def publish_content(self, tags, markdowncontent, title):
+    def publish_content(self, tags, markdowncontent, title, plant_config):
         draft_id = self.get_draft_id(markdowncontent, tags, title)
         if draft_id == 'need_login':
             return draft_id
         if not draft_id:
-            return None
-        new_tags = self.get_tags(tags)
+            return False
+        if tags:
+            new_tags = self.get_tags(tags)
+        else:
+            new_tags = self.get_tags(plant_config[0].tags)
+        source_url = ""
+        type = 1
+        if plant_config:
+            if plant_config[0].art_type:
+                type = int(plant_config[0].art_type)
+                if type == 2:
+                    source_url = plant_config[0].art_source_url
+                elif type == 3:
+                    source_url = plant_config[0].art_source_url
         url = 'https://gateway.segmentfault.com/article'
         form_data = {
             "tags": new_tags,
@@ -69,17 +81,18 @@ class SegFaultPublish:
             "text": markdowncontent,
             "draft_id": draft_id,
             "blog_id": "0",
-            "type": 1,
-            "url": "",
+            "type": type,
+            "url": source_url,
             "cover": "",
             "license": 1,
             "log": ""
         }
         # 成功的状态码为 201，只需要token 即可
         res = self.sess.post(url=url, json=form_data)
+        print(res.text)
         if res.text:
             return res.text
-        return None
+        return False
 
     def del_doc(self, art_url, reason=None):
         art_id = art_url.rsplit('/', 1)[1]

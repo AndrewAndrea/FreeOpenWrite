@@ -1,0 +1,236 @@
+{% extends 'app_doc/user/user_base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}{% trans "新增配置" %}{% endblock %}
+{% block content %}
+    <div class="layui-card">
+        <div class="layui-card-header">{% trans "新增配置" %}</div>
+        <div class="layui-card-body">
+            <form class="layui-form" lay-filter="form_add">
+            {% csrf_token %}
+                <input type="text" name="plant_config" hidden value="{{ plant_config.id }}">
+                <div class="layui-form-item" id="plant_config">
+                    <label class="layui-form-label">{% trans "渠道" %}</label>
+                    <div class="layui-input-inline">
+                        <select name="plant" lay-verify="required" lay-filter="plant" id="plant">
+                            <option value="">{% trans "按渠道筛选" %}</option>
+                            {% for p in plant_list %}
+                                <option value="{{ p.plant_name }}">{{ p.plant_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item" id="art_type" style="display: none">
+                    <label class="layui-form-label">文章类型</label>
+                    <div class="layui-input-block" id="art_type_radio">
+                        <input type="radio" name="art_type" lay-filter="art_type" value="1" title="原创" checked>
+                        <input type="radio" name="art_type" lay-filter="art_type" value="2" title="转载">
+                        <input type="radio" name="art_type" lay-filter="art_type" value="3" title="翻译">
+                    </div>
+                </div>
+                <div class="layui-form-item" id="art_source_url" style="display: none">
+                    <label class="layui-form-label">文章来源</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="art_source_url" lay-verify="art_source_url" autocomplete="off"
+                               placeholder="请输入文章来源" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item" id="art_category" style="display: none">
+                    <label class="layui-form-label">文章分类</label>
+                    <div class="layui-input-inline" id="category">
+                        <select name="category" lay-filter="category" id="category_select">
+                            <option value="">请选择分类</option>
+                            {#                            {% for c in category_list %}#}
+                            {#                                <option value="{{ c.c_name }}">{{ c.c_name }}</option>#}
+                            {#                            {% endfor %}#}
+                        </select>
+                    </div>
+                    <div class="layui-input-inline" id="sub_category">
+                        <select name="sub_category" lay-filter="sub_category" id="sub_category_select">
+                            <option value="">请选择二级分类</option>
+                            {#                            {% for sub_c in sub_category_list %}#}
+                            {#                                <option value="{{ sub_c.sub_c_id }}">{{ sub_c.sub_c_name }}</option>#}
+                            {#                            {% endfor %}#}
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item" id="art_pub_type" style="display: none">
+                    <label class="layui-form-label">发布形式</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="art_pub_type" value="1" title="公开">
+                        <input type="radio" name="art_pub_type" value="2" title="私密">
+{#                        <input type="radio" name="art_pub_type" value="3" title="粉丝可见">#}
+                        <input type="radio" name="art_pub_type" value="3" title="VIP可见">
+                    </div>
+                </div>
+                <div class="layui-form-item" id="art_tags" style="display: none">
+                    <label class="layui-form-label">文章标签</label>
+                    <div class="tags" id="tags">
+                        <input type="text" name="inputTags" id="inputTags" placeholder="回车生成标签" autocomplete="off">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button type="button" class="layui-btn" id="formbtn">提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">关闭</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+{% endblock %}
+{% block custom_script %}
+
+    <script src="/static/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+        {#new Function($('.run').text())()#}
+        layui.use(['form', 'inputTags'], function () {
+            let art_category_name = '';
+            let art_sub_category_name = '';
+            let plant_value = '';
+            let tags = '';
+            let inputTags = layui.inputTags;
+            $.ajaxSetup({
+                data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+            });
+            inputTags.render({
+                elem: '#inputTags',//定义输入框input对象
+                content: [],//默认标签
+                aldaBtn: false,//是否开启获取所有数据的按钮
+                done: function (value) {
+                    if (tags === '') {
+                        tags = value;
+                    } else {
+                        tags += "," + value;
+                    }
+                }
+            });
+
+
+            var form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
+            form.on('select(plant)', function (data) {
+                plant_value = data.value;
+                if (plant_value === "CSDN" || plant_value === '思否') {
+                    $("#art_type").show();
+
+                    if (plant_value === "CSDN") {
+                        $("#art_pub_type").show();
+                        $("#art_category").show();
+                        getCategory(plant_value, 'category');
+                        $("#sub_category").hide();
+                    } else {
+                        $("#art_pub_type").hide();
+                        $("#art_category").hide();
+                        $("#sub_category").hide();
+                    }
+
+                    $("#art_tags").show();
+                } else if (plant_value === '博客园'  || plant_value === '掘金') {
+                    $("#art_category").show();
+                    $("#sub_category").hide();
+                    $("#art_tags").show();
+                    $("#art_type").hide();
+                    $("#art_pub_type").hide();
+                    $("#art_source_url").hide();
+                    getCategory(plant_value, 'category');
+                }else if (plant_value === '知乎'){
+                    $("#art_tags").show();
+                    $("#art_type").hide();
+                    $("#art_pub_type").hide();
+                    $("#art_source_url").hide();
+                     $("#art_category").hide();
+                }
+            });
+            form.on('radio(art_type)', function (data_radio) {
+                var radio_value = data_radio.value;
+                if (radio_value === '2' || radio_value === '3') {
+                    $("#art_source_url").show();
+                } else {
+                    $("#art_source_url").hide();
+                }
+            });
+            getCategory = function (plant_value, type_name, p_category) {
+                request_data = {
+                    'plant_value': plant_value,
+                    'type_name': type_name,
+                    'p_category': p_category
+                }
+                obj = document.getElementById("category_select");
+                for(i=obj.options.length-1;i>0;i--){
+                    obj.options[i]=null;
+                }
+                $.post("{% url 'api_plant_config' %}", request_data, function (r) {
+                    if (r.status) {
+                        let str_option = '';
+                        let category_list = r.data;
+
+                        for (let i = 0; i < category_list.length; i++) {
+                            console.log(plant_value);
+                            console.log(category_list[i]);
+                            if (plant_value === 'CSDN'){
+                                let option_value = category_list[i];
+                                let option_name = category_list[i];
+                                str_option += "<option value=" + option_value + ">" + option_name + "</option>"
+
+                            }else if(plant_value === '博客园'){
+                                let option_value = category_list[i]['categoryId'];
+                                let option_name = category_list[i]['title'];
+                                str_option += "<option value=" + option_value + ">" + option_name + "</option>"
+                            }else if(plant_value === '掘金'){
+                                let option_value = category_list[i]['category']['category_id'];
+                                let option_name = category_list[i]['category']['category_name'];
+                                str_option += "<option value=" + option_value + ">" + option_name + "</option>"
+                            }
+                        }
+                        $('select[name="category"]').append(str_option);
+                        form.render();
+                    } else {
+                        layer.msg(r.data)
+                    }
+                })
+            }
+            //表单取值
+            layui.$('#formbtn').on('click', function () {
+
+                var data = form.val('form_add');
+                console.log(data)
+                var myselect=document.getElementById("category_select");
+                var sub_select=document.getElementById("sub_category_select");
+               //2：拿到选中项的索引：
+               var index=myselect.selectedIndex ; // selectedIndex代表的是你所选中项的index
+               var sub_index=sub_select.selectedIndex ; // selectedIndex代表的是你所选中项的index
+               //4:拿到选中项options的text：
+               console.log(myselect.options[index].text);
+                data['inputTags'] = tags;
+                data['csrfmiddlewaretoken'] = '{{ csrf_token }}';
+                data['category_name'] = myselect.options[index].text;
+                data['sub_category_name'] = sub_select.options[sub_index].text;
+                {#let json_data = JSON.stringify(data);#}
+                {#console.log(json_data);#}
+                $.ajax({
+                    url: "{% url 'add_plant_config' %}",
+                    async: false,
+                    type: "POST",
+                    data: data,
+                    success: function (data) {
+                        layer.msg(data.data, function () {
+                            if (data.status === true){
+                                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                                parent.layer.close(index)
+                            }
+
+                        })
+                    },
+                    error: function (data) {
+                        layer.msg(data.data)
+                    }
+                })
+            });
+
+        });
+        //var index = parent.layer.getFrameIndex(window.name);
+        //parent.layer.iframeAuto(index);
+    </script>
+{% endblock %}
