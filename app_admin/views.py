@@ -22,7 +22,7 @@ from loguru import logger
 import re
 
 
-apply_plant_list = ['CSDN', '博客园', '思否', '知乎', '掘金']
+apply_plant_list = ['CSDN', '博客园', '思否', '知乎', '掘金', '简书']
 
 
 # 返回验证码图片

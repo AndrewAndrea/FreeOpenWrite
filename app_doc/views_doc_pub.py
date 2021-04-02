@@ -23,6 +23,7 @@ from app_doc.spider.csdn_publish import CSDNPublish
 from app_doc.spider.segfault_publish import SegFaultPublish
 from app_doc.spider.zhihu_publish import ZhiHuPublish
 from app_doc.spider.juejin_publish import JueJinPublish
+from app_doc.spider.jianshu_publish import JianShuPublish
 
 
 # 文章分发记录管理
@@ -143,6 +144,8 @@ def del_doc_publish(request):
                         result = ZhiHuPublish(cookies).del_doc(doc_publish_url)
                     elif plant_name == "掘金":
                         result = JueJinPublish(cookies).del_doc(doc_publish_url)
+                    elif plant_name == "简书":
+                        result = JianShuPublish(cookies).del_doc(doc_publish_url)
                     else:
                         return JsonResponse({'status': False, 'data': "非法请求"})
                     if result:
@@ -232,7 +235,7 @@ def article_all_distribution(request):
                 all_result[plant_name] = f'<b>{plant_name}</b>，请更换 cookie 后重新发布'
                 continue
                 # return JsonResponse({'status': False, 'data': '发布失败，请更换 cookie 后重新发布！'})
-            if result:
+            if result and pub_status == 1:
                 DocPublishData.objects.create(
                     doc=doc[0],
                     plant_name=plant_name,
@@ -329,6 +332,21 @@ def pub_spider(plant_name, plant_cookie, **kwargs):
         article_id = r_json.get('data').get('article_id')
         publish_url = 'https://juejin.cn/post/' + str(article_id)
         pub_status = 1
+
+    elif plant_name == '简书':
+        jian_shu_pub = JianShuPublish(cookie=plant_cookie)
+        result = jian_shu_pub.publish_content(tags=doc_tags, title=doc_name, markdowncontent=doc_pre_content,
+                                              plant_config=plant_config)
+        # r_json = json.loads(result)
+        error = result.get('error')
+        if not error:
+            article_id = result.get('slug')
+            edit_id = result.get('id')
+            publish_url = 'https://www.jianshu.com/p/' + str(article_id) + f'?{edit_id}'
+            pub_status = 1
+        else:
+            pub_status = 0
+            result = error[0].get('message')
 
     # else:
     #     result = None
@@ -638,7 +656,12 @@ def api_plant_config(request):
                     if category_list is None:
                         return JsonResponse({'status': False, 'data': '获取分类失败，请检查cookie是否正确！'})
                     return JsonResponse({'status': True, 'data': category_list})
-            # if plant_value == '知乎'
+            if plant_value == '简书':
+                if type_name == 'category':
+                    category_list = JianShuPublish(cookie=plant_cookie).get_notebooks()
+                    if category_list is None:
+                        return JsonResponse({'status': False, 'data': '获取分类失败，请检查cookie是否正确！'})
+                    return JsonResponse({'status': True, 'data': category_list})
 
         return render(request, 'app_doc/manage/manage_plant_config_iframe.html', locals())
 

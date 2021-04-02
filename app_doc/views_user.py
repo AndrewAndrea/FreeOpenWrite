@@ -25,15 +25,6 @@ import re
 import json
 
 
-
-# 个人中心
-from app_doc.spider.cnblog_publish import CNBlogPublish
-from app_doc.spider.csdn_publish import CSDNPublish
-from app_doc.spider.segfault_publish import SegFaultPublish
-from app_doc.spider.zhihu_publish import ZhiHuPublish
-from app_doc.spider.juejin_publish import JueJinPublish
-
-
 # 替换前端传来的非法字符
 from app_doc.views_doc_pub import pub_spider
 
@@ -168,8 +159,9 @@ def article_distribution(request):
             if result == 'need_login':
                 cookie.update(status=0)
                 return JsonResponse({'status': False, 'data': '发布失败，请更换 cookie 后重新发布！'})
-
-            if result:
+            if result and pub_status == 0:
+                return JsonResponse({'status': False, 'data': result})
+            if result and pub_status == 1:
                 DocPublishData.objects.create(
                     doc=doc[0],
                     plant_name=plant_name,

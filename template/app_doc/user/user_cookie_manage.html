@@ -211,12 +211,12 @@
                         }
                         $.post("{% url 'cookie_manage' %}", data, function (r) {
                             if (r.status) {
-                                layer.msg(r.data, {icon: 1, time: 50000}, function () {
+                                layer.msg(r.data, {icon: 1, time: 3000}, function () {
                                     window.location.reload();
                                 });
                                 //layer.close(index)
                             } else {
-                                layer.msg(r.data, {icon: 2, time: 50000}, function () {
+                                layer.msg(r.data, {icon: 2, time: 3000}, function () {
                                     window.location.reload();
                                 });
                             }
@@ -278,7 +278,7 @@
                                         layer.close(index)
                                     },
                                 });
-                            } else if (plant_name === '博客园') {
+                            } else if (plant_name === '博客园'|| plant_name === '简书') {
 
                                 tags = $("#tags").val();
 
@@ -303,7 +303,7 @@
                         $.post("{% url 'article_distribution' %}", data, function (r) {
                             if (r.status) {
                                 {#layer.msg(result_str, {icon: 1, time: 10000});#}
-                                layer.msg(r.data, {icon: 1, time: 5000}, function () {
+                                layer.msg(r.data, {icon: 1, time: 3000}, function () {
                                     window.location.reload();
                                 });
                                 //删除成功，刷新页面
@@ -392,7 +392,7 @@
                                 for (var item in r.result){
                                     result_str += r.result[item] + '</br>';
                                 }
-                                layer.msg(result_str, {icon: 1, time: 5000});
+                                layer.msg(result_str, {icon: 1, time: 3000});
                                 {#window.location.href = '/doc_publish_manage'#}
 
                                 //删除成功，刷新页面

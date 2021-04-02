@@ -142,6 +142,15 @@
                     $("#art_source_url").hide();
                      $("#art_category").hide();
                 }
+                else if (plant_value === '简书'){
+                    $("#art_tags").hide();
+                    $("#art_type").hide();
+                    $("#art_pub_type").hide();
+                    $("#art_source_url").hide();
+                   $("#art_category").show();
+                   $("#sub_category").hide();
+                   getCategory(plant_value, 'category');
+                }
             });
             form.on('radio(art_type)', function (data_radio) {
                 var radio_value = data_radio.value;
@@ -181,6 +190,10 @@
                             }else if(plant_value === '掘金'){
                                 let option_value = category_list[i]['category']['category_id'];
                                 let option_name = category_list[i]['category']['category_name'];
+                                str_option += "<option value=" + option_value + ">" + option_name + "</option>"
+                            }else if(plant_value === '简书'){
+                                let option_value = category_list[i]['id'];
+                                let option_name = category_list[i]['name'];
                                 str_option += "<option value=" + option_value + ">" + option_name + "</option>"
                             }
                         }
