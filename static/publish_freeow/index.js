@@ -2,7 +2,6 @@ let t = "window.MAIN={ChromeService:{testConnect(e){e.success({})},testOrigin(e,
 
 let plant_name_list = ["csdn", "cnblogs", "segmentfault", "juejin", 'jianshu', "zhihu"];
 let plant_name_zh_list = ["CSDN", "博客园", "思否", "掘金", '简书', "知乎"];
-let plant_id_list = ["1", "2", "4", "5", '6', "3"];
 let plant_href_list = ["https://blog.csdn.net", "https://www.cnblogs.com",
     "https://segmentfault.com", "https://juejin.cn", "https://jianshu.com", "https://www.zhihu.com"];
 
@@ -36,6 +35,7 @@ getPlugPlantCookie = function () {
 let i = 0;
 function get_cookie() {
     if(i >= 6){
+        window.location.reload();
         return;
     }
     let msg_str = '';
@@ -54,7 +54,7 @@ function get_cookie() {
                         let data = {
                             'types': 3,
                             'cookie': res_cookie,
-                            'plant_id': plant_id_list[i],
+                            'plant_name': plant_name_zh_list[i],
                         }
                         $.post("/cookie_manage/", data, function (r) {
                             if (r.status) {

@@ -116,16 +116,15 @@ def cookie_manage(request):
                 return JsonResponse({'status': False, 'data': '系统异常'})
         elif int(types) == 3:  # 当前cookie 存在则更新，不存在则添加
             cookie = request.POST.get('cookie', None)
-            plant_id = request.POST.get('plant_id', None)  # 平台id
-            if not plant_id:
+            plant_name = request.POST.get('plant_name', None)  # 平台id
+            if not plant_name:
                 return JsonResponse({'status': False, 'data': '异常请求！'})
             try:
-                plant_result = Plant.objects.filter(id=int(plant_id), status=1)
+                plant_result = Plant.objects.filter(plant_name=plant_name, status=1)
                 is_cookie = CookiePlant.objects.filter(plant=plant_result[0], create_user=request.user)
                 if not cookie:
                     return JsonResponse({'status': False, 'data': f'<b>{plant_result[0].plant_name}</b> 没有登陆哦！'})
                 if is_cookie:
-
                     is_cookie.update(status=1, cookie=cookie)
                 else:
                     # 创建一个 cookie

@@ -13,7 +13,8 @@ def cookie_to_dict(cookies):
         if i == '':
             continue
         row = i.strip().split('=', 1)
-        row_dict[row[0].strip()] = row[1].strip()
+        if len(row) == 2:
+            row_dict[row[0].strip()] = row[1].strip()
     return row_dict
 
 

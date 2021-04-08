@@ -5,11 +5,12 @@
 # @Project : spider_publish
 import requests
 
-from app_doc.spider.utils.tools import headers_to_dict
+from app_doc.spider.utils.tools import headers_to_dict, cookie_to_dict
 
 
 class SegFaultPublish:
     def __init__(self, seg_token):
+        seg_token = cookie_to_dict(seg_token).get('PHPSESSID')
         self.sess = requests.session()
         base_header = f"""
             accept: */*
@@ -89,7 +90,6 @@ class SegFaultPublish:
         }
         # 成功的状态码为 201，只需要token 即可
         res = self.sess.post(url=url, json=form_data)
-        print(res.text)
         if res.text:
             return res.text
         return False
