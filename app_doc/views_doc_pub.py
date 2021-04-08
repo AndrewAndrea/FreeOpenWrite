@@ -220,8 +220,11 @@ def article_all_distribution(request):
             plant_name = plant_info.plant.plant_name
             all_result[plant_name] = {}
             plant_config = PlatformConfiguration.objects.filter(create_user=request.user, plant__plant_name=plant_name)
-            if not plant_config or (plant_config and not plant_config[0].tags):
+            if not plant_config or (plant_config and not plant_config[0].tags and plant_name != '简书'):
                 all_result[plant_name] = f'<b>{plant_name}</b> 没有配置文章标签，请配置文章标签后重新发布！'
+                continue
+            if plant_name == '简书' and (not plant_config or (plant_config and not plant_config[0].category_value)):
+                all_result[plant_name] = f'<b>{plant_name}</b> 没有配置文集，请配置文集后重新发布！'
                 continue
             if plant_name_list and plant_name in plant_name_list:
                 all_result[plant_name] = f'<b>{plant_name}</b> 渠道已发布'

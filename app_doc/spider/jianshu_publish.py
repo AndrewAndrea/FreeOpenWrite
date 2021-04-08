@@ -3,9 +3,14 @@
 # @Author : zj
 # @File : jianshu_publish.py
 # @Project : spider_publish
+import random
+import time
+
+import markdown
 import requests
 import arrow
 
+from lxml import etree
 from app_doc.spider.utils.tools import headers_to_dict
 
 
@@ -54,8 +59,31 @@ class JianShuPublish:
             return res.json()
         return False
 
+    def upload_img(self, content):
+        upload_url = 'https://www.jianshu.com/upload_images/fetch'
+        md = markdown.Markdown(extensions=['markdown.extensions.extra', 'markdown.extensions.codehilite'])
+        content_html = md.convert(content)
+        res_html = etree.HTML(content_html)
+        src_list = res_html.xpath('//img/@src')
+        for src in src_list:
+            while 1:
+                src = src.rsplit('.', 1)[0] + '.png'
+                form_data = {
+                    "url": src
+                }
+                res = self.sess.post(url=upload_url, json=form_data)
+                if res.text:
+                    r_json = res.json()
+                    # 图片在文章中本来就不存在
+                    img_url = r_json.get('url')
+                    content = content.replace(src, img_url)
+                    time.sleep(random.random() * 0.1)
+                    break
+        return content
+
     # 文章保存
     def save_note(self, note_id, title, content):
+        content = self.upload_img(content)
         url = f'https://www.jianshu.com/author/notes/{note_id}'
         form_data = {"id": note_id, "autosave_control": 4, "title": title, "content": content}
         res = self.sess.put(url, json=form_data)
