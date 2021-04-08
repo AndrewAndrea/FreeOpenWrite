@@ -91,9 +91,7 @@ class JueJinPublish:
             "article_id": art_id
         }
         del_url = 'https://api.juejin.cn/content_api/v1/article/delete'
-        res = self.sess.delete(del_url, json=form_data)
-        # if res.text and res.text == '404 page not found':
-        #     return True
-        if res.status_code == 204:
+        res = self.sess.post(del_url, json=form_data)
+        if res.status_code == 200:
             return True
         return False

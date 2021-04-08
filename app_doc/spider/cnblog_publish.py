@@ -23,8 +23,10 @@ class CNBlogPublish:
             referer: https://i.cnblogs.com/posts/edit
             user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36
         """
-
         self.sess.headers = headers_to_dict(base_header)
+        edit_url = 'https://i.cnblogs.com/posts/edit'
+        res_edit = self.sess.get(edit_url)
+        self.xsrf_token = res_edit.cookies.get_dict().get('XSRF-TOKEN')
 
     def get_blog_id(self):
         # 获取 x-blog_id
@@ -49,9 +51,7 @@ class CNBlogPublish:
         return None
 
     def publish_content(self, tags, markdowncontent, title, is_markdown, plant_config):
-        edit_url = 'https://i.cnblogs.com/posts/edit'
-        res_edit = self.sess.get(edit_url)
-        self.xsrf_token = res_edit.cookies.get_dict().get('XSRF-TOKEN')
+
         utc_now = arrow.utcnow()
         date_published = str(utc_now).split('+')[0][:-3] + 'Z'
         # x_blog_id = self.get_blog_id()
