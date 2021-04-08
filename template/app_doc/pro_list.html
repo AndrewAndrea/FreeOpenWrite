@@ -4,6 +4,7 @@
 <html lang="zh-cn">
 <head>
     <meta charset="UTF-8">
+    <meta name=renderer  content=webkit>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge，chrome=1">
     <meta http-equiv="Cache-Control" content="no-transform" />
     <meta http-equiv="Cache-Control" content="no-siteapp" />
@@ -11,7 +12,7 @@
     <meta name="keywords" content="{% if site_keywords != None %}{{site_keywords}}{% endif %}"/>
     <meta name="description" content="{% if site_desc != None %}{{site_desc}}{% endif %}" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>{% if site_name != None and site_name != '' %}{{site_name}} {% else %}{% trans "站点标题" %}{% endif %} - {% if site_sub_name != None %}{{site_sub_name}} {% else %}{% trans "文档分发平台" %}{% endif %}</title>
+    <title>{% if site_name != None and site_name != '' %}{{site_name}} {% else %}{% trans "站点标题" %}{% endif %} - {% if site_sub_name != None %}{{site_sub_name}} {% else %}{% trans "FreeOW文档分发平台" %}{% endif %}</title>
     <link href="{% static 'layui/css/layui.css' %}" rel="stylesheet">
     <link href="{% static 'mrdoc/mrdoc.css' %}?version={{mrdoc_version}}" rel="stylesheet">
     <link href="{% static 'iconFont/iconfont.css' %}?version={{mrdoc_version}}" rel="stylesheet">
@@ -132,6 +133,8 @@
                     <div class="layui-card-header" 
                         {% if p.role == 1 %}
                         style="background: url({% static 'icon_img/simi.svg' %}) no-repeat right bottom;"
+                        {% elif p.role == 3 %}
+                        style="background: url({% static 'icon_img/viewcode.svg' %}) no-repeat right center;"
                         {% endif %}
                         >
                         {% if p.icon %}
@@ -246,9 +249,9 @@
 </div>
 <!-- 结束新建文集div块 -->
 
-<script src="{% static 'iconFont/iconfont.js' %}"></script>
+<script src="{% static 'iconFont/iconfont.js' %}?version={{mrdoc_version}}"></script>
 <script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
-<script src="{% static 'layui/layui.all.js' %}"></script>
+<script src="{% static 'layui/layui.all.js' %}?version={{mrdoc_version}}"></script>
 {% block custom_script %}
     <script>
         $.ajaxSetup({

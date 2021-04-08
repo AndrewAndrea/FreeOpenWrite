@@ -5,10 +5,11 @@
 # 博客地址：zmister.com
 
 from rest_framework.permissions import BasePermission,SAFE_METHODS
+from django.utils.translation import gettext_lazy as _
 
 
 class AppPermission(BasePermission):
-    message = '只有VIP才能访问'
+    message = _('只有VIP才能访问')
 
     def has_permission(self, request, view):
         # vip才有访问权限

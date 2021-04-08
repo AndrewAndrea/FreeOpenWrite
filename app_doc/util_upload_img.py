@@ -1,11 +1,5 @@
 # coding:utf-8
-import traceback
-from django.http import HttpResponse
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
-
-from django.contrib.auth.decorators import login_required  # 登录需求装饰器
-import datetime, time, json, base64, os, uuid
+import datetime,time,json,base64,os,uuid
 from app_doc.models import Image, ImageGroup, Attachment, DrawingBedSetting
 
 from app_admin.models import SysSetting
@@ -13,6 +7,11 @@ import requests
 import random
 from upyun import UpYun
 from qiniu import Auth, put_data
+from django.http import HttpResponse,JsonResponse
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required # 登录需求装饰器
+from django.utils.translation import gettext_lazy as _
 
 
 from app_doc.views_doc_pub import get_drawing_beds
@@ -34,38 +33,36 @@ def upload_ice_img(request):
     bed_default_types = None
     if dbs.count() != 0:
         bed_default_types = dbs.get(name="default_types").types
-    try:
-        up_type = request.POST.get('upload_type', '')
-        up_num = request.POST.get('upload_num', '')
-        iceEditor_img = str(request.POST.get('iceEditor-img', ''))
-    except:
-        pass
+
+    up_type = request.POST.get('upload_type', '')
+    up_num = request.POST.get('upload_num', '')
+    iceEditor_img = str(request.POST.get('iceEditor-img', ''))
     if up_type == "files":
         # 多文件上传功能，需要修改js文件
         res_dic = {'length': int(up_num)}
         for i in range(0, int(up_num)):
             file_obj = request.FILES.get('file_' + str(i))
-            result = ice_save_file(file_obj, request.user, bed_default_types)
+            result = ice_save_file(request, file_obj, request.user, bed_default_types)
             res_dic[i] = result
     elif iceEditor_img.lower().startswith('http'):
-        res_dic = ice_url_img_upload(iceEditor_img, request.user, bed_default_types)
+        res_dic = ice_url_img_upload(request, iceEditor_img, request.user, bed_default_types)
     else:
         # 粘贴上传和单文件上传
         file_obj = request.FILES.get('file[]')
-        result = ice_save_file(file_obj, request.user, bed_default_types)
+        result = ice_save_file(request, file_obj, request.user, bed_default_types)
         res_dic = {0: result, "length": 1, 'other_msg': iceEditor_img}  # 一个文件，直接把文件数量固定了
     return HttpResponse(json.dumps(res_dic), content_type="application/json")
 
 
-def ice_save_file(file_obj, user, bed_default_types):
+def ice_save_file(request, file_obj, user, bed_default_types):
     # 默认保留支持ice单文件上传功能，可以iceEditor中开启
     file_suffix = str(file_obj).split(".")[-1]  # 提取图片格式
     # 允许上传文件类型，ice粘贴上传为blob
     allow_suffix = ["jpg", "jpeg", "gif", "png", "bmp", "webp", "blob"]
     # 判断附件格式
     is_images = ["jpg", "jpeg", "gif", "png", "bmp", "webp"]
-    if file_suffix.lower() not in allow_suffix:
-        return {"error": "文件格式不允许"}
+    if file_suffix.lower() not in allow_suffix:         
+        return {"error": _("文件格式不允许")}
     if file_suffix.lower() == 'blob':
         # 粘贴上传直接默认为png就行
         file_suffix = 'png'
@@ -81,36 +78,35 @@ def ice_save_file(file_obj, user, bed_default_types):
     # file_Url 是文件的url下发路径
     file_url = (settings.MEDIA_URL + relative_path + file_name).replace("//", "/")
     if bed_default_types:
-        file_url = upload_drawing_bed(file_name, file_obj.read(), bed_default_types)
+        file_url = upload_drawing_bed(request, file_name, file_obj.read(), bed_default_types)
         if file_url is False:
             return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
     else:
         with open(path_file, 'wb') as f:
             for chunk in file_obj.chunks():
-                f.write(chunk)  # 保存文件
-            if file_suffix.lower() in is_images:
+                f.write(chunk) # 保存文件
+            if file_suffix.lower()  in is_images:
                 Image.objects.create(
                     user=user,
                     file_path=file_url,
                     file_name=file_name,
-                    remark="iceEditor上传"
+                    remark=_("iceEditor上传")
                 )
-            else:
-                # 文件上传，暂时不屏蔽，如果需要正常使用此功能，是需要在iceeditor中修改的，mrdoc使用的是自定义脚本上传
+            else :
+                #文件上传，暂时不屏蔽，如果需要正常使用此功能，是需要在iceeditor中修改的，mrdoc使用的是自定义脚本上传
                 Attachment.objects.create(
                     user=user,
                     file_path=file_url,
                     file_name=file_name,
-                    file_size=str(round(len(chunk) / 1024, 2)) + "KB"
+                    file_size=str(round(len(chunk)/1024,2))+"KB"
                 )
-
-    return {"error": 0, "name": str(file_obj), 'url': file_url}
+            return {"error": _("文件存储异常"), "name": str(file_obj),'url':file_url}
 
     # return {"error": "文件存储异常"}
 
 
 # ice_url图片上传
-def ice_url_img_upload(url, user, bed_default_types):
+def ice_url_img_upload(request, url, user, bed_default_types):
     relative_path = upload_generation_dir()
     name_time = time.strftime("%Y-%m-%d_%H%M%S_")
     name_join = ""
@@ -128,7 +124,7 @@ def ice_url_img_upload(url, user, bed_default_types):
 
     if r.status_code == 200:
         if bed_default_types:
-            file_url = upload_drawing_bed(file_name, r.content, bed_default_types)
+            file_url = upload_drawing_bed(request, file_name, r.content, bed_default_types)
             if file_url is False:
                 return {"success": 0, "message": "上传失败，请检查配置信息是否正确！"}
         else:
@@ -138,7 +134,7 @@ def ice_url_img_upload(url, user, bed_default_types):
                 user=user,
                 file_path=file_url,
                 file_name=file_name,
-                remark='iceurl粘贴上传',
+                remark=_('iceurl粘贴上传'),
             )
     resp_data = {"error": 0, "name": file_name, 'url': file_url}
     return resp_data
@@ -151,51 +147,48 @@ def upload_img(request):
     # {"success": 0, "message": "出错信息"}
     # {"success": 1, "url": "图片地址"}
     ##################
+
+    dbs = DrawingBedSetting.objects.filter(name__contains="default_types", value__isnull=False, create_user=request.user)
+    bed_default_types = None
+    if dbs.count() != 0:
+        bed_default_types = dbs.get(name__contains="default_types").types
+    img = request.FILES.get("editormd-image-file", None)  # 编辑器上传
+    manage_upload = request.FILES.get('manage_upload', None)  # 图片管理上传
     try:
-        dbs = DrawingBedSetting.objects.filter(name__contains="default_types", value__isnull=False, create_user=request.user)
-        bed_default_types = None
-        if dbs.count() != 0:
-            bed_default_types = dbs.get(name__contains="default_types").types
-        img = request.FILES.get("editormd-image-file", None)  # 编辑器上传
-        manage_upload = request.FILES.get('manage_upload', None)  # 图片管理上传
-        try:
-            url_img = json.loads(request.body.decode())['url']
-        except:
-            url_img = None
-        dir_name = request.POST.get('dirname', '')
-        base_img = request.POST.get('base', None)
-        group_id = request.POST.get('group_id', 0)
-
-        if int(group_id) not in [0, -1]:
-            try:
-                group_id = ImageGroup.objects.get(id=group_id)
-            except:
-                group_id = None
-        else:
-            group_id = None
-
-        # 上传普通图片文件
-        if img:
-            result = img_upload(request, img, dir_name, request.user, bed_default_types)
-        # 图片管理上传
-        elif manage_upload:
-            result = img_upload(request, manage_upload, dir_name, request.user, bed_default_types,
-                                group_id=group_id)
-        # 上传base64编码图片
-        elif base_img:
-            result = base_img_upload(request, base_img, dir_name, request.user, bed_default_types)
-        # 上传图片URL地址
-        elif url_img:
-            if url_img.startswith("data:image"):  # 以URL形式上传的BASE64编码图片
-                result = base_img_upload(request, url_img, dir_name, request.user, bed_default_types)
-            else:
-                result = url_img_upload(request, url_img, dir_name, request.user, bed_default_types)
-        else:
-            result = {"success": 0, "message": "上传出错"}
-        return HttpResponse(json.dumps(result), content_type="application/json")
+        url_img = json.loads(request.body.decode())['url']
     except:
-        print(traceback.format_exc())
+        url_img = None
+    dir_name = request.POST.get('dirname', '')
+    base_img = request.POST.get('base', None)
+    group_id = request.POST.get('group_id', 0)
 
+    if int(group_id) not in [0, -1]:
+        try:
+            group_id = ImageGroup.objects.get(id=group_id)
+        except:
+            group_id = None
+    else:
+        group_id = None
+
+    # 上传普通图片文件
+    if img:
+        result = img_upload(request, img, dir_name, request.user, bed_default_types)
+    # 图片管理上传
+    elif manage_upload:
+        result = img_upload(request, manage_upload, dir_name, request.user, bed_default_types,
+                            group_id=group_id)
+    # 上传base64编码图片
+    elif base_img:
+        result = base_img_upload(request, base_img, dir_name, request.user, bed_default_types)
+    # 上传图片URL地址
+    elif url_img:
+        if url_img.startswith("data:image"):  # 以URL形式上传的BASE64编码图片
+            result = base_img_upload(request, url_img, dir_name, request.user, bed_default_types)
+        else:
+            result = url_img_upload(request, url_img, dir_name, request.user, bed_default_types)
+    else:
+        result = {"success": 0, "message": _("上传出错")}
+    return JsonResponse(result)
 
 # 目录创建
 def upload_generation_dir(dir_name=''):
@@ -215,7 +208,7 @@ def img_upload(request, files, dir_name, user, bed_default_types, group_id=None)
     file_suffix = files.name.split(".")[-1]  # 提取图片格式
     # 判断图片格式
     if file_suffix.lower() not in allow_suffix:
-        return {"success": 0, "message": "图片格式不正确"}
+        return {"success": 0, "message": _("图片格式不正确")}
 
     # 判断图片的大小
     try:
@@ -225,7 +218,7 @@ def img_upload(request, files, dir_name, user, bed_default_types, group_id=None)
         # print(repr(e))
         allow_img_size = 10485760
     if files.size > allow_img_size:
-        return {"success": 0, "message": "图片大小超出{}MB".format(allow_img_size / 1048576)}
+        return {"success": 0, "message": _("图片大小超出{}MB".format(allow_img_size / 1048576))}
 
     relative_path = upload_generation_dir(dir_name)
     file_name = files.name.replace(file_suffix, '').replace('.', '') + '_' + str(int(time.time())) + '.' + file_suffix
@@ -245,10 +238,10 @@ def img_upload(request, files, dir_name, user, bed_default_types, group_id=None)
         user=user,
         file_path=file_url,
         file_name=file_name,
-        remark='本地上传',
-        group=group_id,
+        remark=_('本地上传'),
+        group = group_id,
     )
-    return {"success": 1, "url": file_url, 'message': '上传图片成功'}
+    return {"success": 1, "url": file_url,'message':_('上传图片成功')}
 
 
 # base64编码图片上传
@@ -273,9 +266,9 @@ def base_img_upload(request, files, dir_name, user, bed_default_types):
         user=user,
         file_path=file_url,
         file_name=file_name,
-        remark='粘贴上传',
+        remark = _('粘贴上传'),
     )
-    return {"success": 1, "url": file_url, 'message': '上传图片成功'}
+    return {"success": 1, "url": file_url, 'message': _('上传图片成功')}
 
 
 # url图片上传
@@ -304,7 +297,7 @@ def url_img_upload(request, url, dir_name, user, bed_default_types):
             user=user,
             file_path=file_url,
             file_name=file_name,
-            remark='粘贴上传',
+            remark=_('粘贴上传'),
         )
     resp_data = {
         'msg': '',

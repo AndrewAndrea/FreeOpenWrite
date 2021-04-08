@@ -52,7 +52,7 @@
                   <div class="layui-form-item layui-form-text">
                     <label class="layui-form-label">站点描述</label>
                     <div class="layui-input-block">
-                      <input name="site_desc" placeholder="请用简短的文字描述你的MrDoc站点" class="layui-input" value="{% if site_desc != None %}{{site_desc}}{% endif %}"></input>
+                      <input name="site_desc" placeholder="请用简短的文字描述你的觅道文档站点" class="layui-input" value="{% if site_desc != None %}{{site_desc}}{% endif %}"></input>
                     </div>
                   </div>
                   <!-- 备案号 -->
@@ -291,7 +291,7 @@
 {% block custom_script %}
 <script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
 <!-- <script src="{% static 'layui/layui.all.js' %}"></script> -->
-<script src="{% static '/tagsInput/tagsinput.js' %}" type="text/javascript" charset="utf-8"></script>
+<script src="{% static '/tagsInput/tagsinput.js' %}?version={{mrdoc_version}}" type="text/javascript" charset="utf-8"></script>
 <script>
   $.ajaxSetup({
       data: {csrfmiddlewaretoken: '{{ csrf_token }}' },

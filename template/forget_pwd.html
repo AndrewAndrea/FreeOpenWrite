@@ -40,7 +40,7 @@
             <form class="layui-form" action="{% url 'forget_pwd' %}"  method='POST'>
                 {% csrf_token %}
                 <div class="layui-form-item">
-                    <h2><strong>{% trans "忘记密码" %} - {% trans "觅道文档" %}</strong></h2>
+                    <h2><strong>{% trans "忘记密码" %} - {% trans "FreeOpenWrite" %}</strong></h2>
                 </div>
                 <span style='color:red;margin-bottom: 10px;'>{{ errormsg }}</span>
                 <div class="layui-form-item">

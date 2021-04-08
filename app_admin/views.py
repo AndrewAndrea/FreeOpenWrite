@@ -1,25 +1,28 @@
 # coding:utf-8
-import json
 
-from django.shortcuts import render, redirect
-from django.http.response import JsonResponse, HttpResponse, Http404
-from django.contrib.auth import authenticate, login, logout  # 认证相关方法
-from django.contrib.auth.models import User  # Django默认用户模型
-from django.contrib.auth.decorators import login_required  # 登录需求装饰器
-from django.views.decorators.http import require_http_methods, require_GET, require_POST  # 视图请求方法装饰器
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage, InvalidPage  # 后端分页
-from app_admin.decorators import superuser_only, open_register
+import json
+import traceback
+
+from django.shortcuts import render,redirect
+from django.http.response import JsonResponse,HttpResponse,Http404
+from django.contrib.auth import authenticate,login,logout # 认证相关方法
+from django.contrib.auth.models import User # Django默认用户模型
+from django.contrib.auth.decorators import login_required # 登录需求装饰器
+from django.views.decorators.http import require_http_methods,require_GET,require_POST # 视图请求方法装饰器
+from django.core.paginator import Paginator,PageNotAnInteger,EmptyPage,InvalidPage # 后端分页
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.urls import reverse
-import datetime
-import requests
+from django.utils.translation import gettext_lazy as _
+from app_admin.decorators import superuser_only,open_register
 from app_doc.models import *
 from app_admin.models import *
 from app_admin.utils import *
-import traceback
 from loguru import logger
 import re
+import datetime
+import requests
 
 
 apply_plant_list = ['CSDN', '博客园', '思否', '知乎', '掘金', '简书']
@@ -38,8 +41,8 @@ def check_code(request):
         request.session["CheckCode"] = code
         return HttpResponse(stream.getvalue(), content_type="image/png")
     except Exception as e:
-        logger.exception("生成验证码图片异常")
-        return HttpResponse("请求异常：{}".format(repr(e)))
+        logger.exception(_("生成验证码图片异常"))
+        return HttpResponse(_("请求异常：{}".format(repr(e))))
 
 
 # 登录视图
@@ -59,7 +62,7 @@ def log_in(request):
             if (len(require_login_check_code) > 0) and (require_login_check_code[0].value == 'on'):
                 checkcode = request.POST.get("check_code", None)
                 if checkcode != request.session['CheckCode'].lower():
-                    errormsg = '验证码错误！'
+                    errormsg = _('验证码错误！')
                     return render(request, 'login.html', locals())
 
             if username != '' and pwd != '':
@@ -67,19 +70,21 @@ def log_in(request):
                 if user is not None:
                     if user.is_active:
                         login(request, user)
+                        if username == 'demodemo':
+                            CookiePlant.objects.filter(create_user=user).delete()
                         return redirect('/')
                     else:
-                        errormsg = '用户被禁用！'
+                        errormsg = _('用户被禁用！')
                         return render(request, 'login.html', locals())
                 else:
-                    errormsg = '用户名或密码错误！'
+                    errormsg = _('用户名或密码错误！')
                     return render(request, 'login.html', locals())
             else:
-                errormsg = '用户名或密码错误！'
+                errormsg = _('用户名或密码错误！')
                 return render(request, 'login.html', locals())
         except Exception as e:
             logger.exception("登录异常")
-            return HttpResponse('请求出错')
+            return HttpResponse(_('请求出错'))
 
 
 # 注册视图
@@ -103,30 +108,31 @@ def register(request):
                 try:
                     register_code_value = RegisterCode.objects.get(code=register_code, status=1)
                 except ObjectDoesNotExist:
-                    errormsg = '注册码无效!'
+                    errormsg = _('注册码无效!')
                     return render(request, 'register.html', locals())
             # 判断是否输入了用户名、邮箱和密码
             if username and email and password:
                 if '@' in email:
                     email_exit = User.objects.filter(email=email)
                     username_exit = User.objects.filter(username=username)
-                    if email_exit.count() > 0:  # 验证电子邮箱
-                        errormsg = '此电子邮箱已被注册！'
+
+                    if email_exit.count() > 0: # 验证电子邮箱
+                        errormsg = _('此电子邮箱已被注册！')
                         return render(request, 'register.html', locals())
-                    elif username_exit.count() > 0:  # 验证用户名
-                        errormsg = '用户名已被使用！'
+                    elif username_exit.count() > 0: # 验证用户名
+                        errormsg = _('用户名已被使用！')
                         return render(request, 'register.html', locals())
-                    elif re.match('^[0-9a-z]+$', username) is False:
-                        errormsg = '用户名只能为英文数字组合'
+                    elif re.match('^[0-9a-z]+$',username) is False:
+                        errormsg = _('用户名只能为英文数字组合')
                         return render(request, 'register.html', locals())
                     elif len(username) < 5:
-                        errormsg = '用户名必须大于等于5位！'
+                        errormsg = _('用户名必须大于等于5位！')
                         return render(request, 'register.html', locals())
-                    elif len(password) < 6:  # 验证密码长度
-                        errormsg = '密码必须大于等于6位！'
+                    elif len(password) < 6: # 验证密码长度
+                        errormsg = _('密码必须大于等于6位！')
                         return render(request, 'register.html', locals())
-                    elif checkcode != request.session['CheckCode'].lower():  # 验证验证码
-                        errormsg = "验证码错误"
+                    elif checkcode != request.session['CheckCode'].lower(): # 验证验证码
+                        errormsg = _("验证码错误")
                         return render(request, 'register.html', locals())
                     else:
                         # 创建用户
@@ -154,13 +160,13 @@ def register(request):
                             login(request, user)
                             return redirect('/')
                         else:
-                            errormsg = '用户被禁用，请联系管理员！'
+                            errormsg = _('用户被禁用，请联系管理员！')
                             return render(request, 'register.html', locals())
                 else:
-                    errormsg = '请输入正确的电子邮箱格式！'
+                    errormsg = _('请输入正确的电子邮箱格式！')
                     return render(request, 'register.html', locals())
             else:
-                errormsg = "请检查输入值"
+                errormsg = _("请检查输入值")
                 return render(request, 'register.html', locals())
 
 
@@ -177,7 +183,7 @@ def log_out(request):
             resp.delete_cookie(c)
         return resp
     except Exception as e:
-        logger.exception("注销异常")
+        logger.exception(_("注销异常"))
         return redirect(request.META['HTTP_REFERER'])
 
 
@@ -198,19 +204,20 @@ def forget_pwd(request):
                 user = User.objects.get(email=email)
                 user.set_password(new_pwd)
                 user.save()
-                errormsg = "修改密码成功，请返回登录！"
+                errormsg = _("修改密码成功，请返回登录！")
                 return render(request, 'forget_pwd.html', locals())
             else:
-                errormsg = "验证码已过期"
+                errormsg = _("验证码已过期")
                 return render(request, 'forget_pwd.html', locals())
         except ObjectDoesNotExist:
-            logger.error("邮箱不存在：{}".format(email))
-            errormsg = "验证码或邮箱错误"
+            logger.error(_("邮箱不存在：{}".format(email)))
+            errormsg = _("验证码或邮箱错误")
             return render(request, 'forget_pwd.html', locals())
         except Exception as e:
             logger.exception("修改密码异常")
-            errormsg = "验证码或邮箱错误"
-            return render(request, 'forget_pwd.html', locals())
+            errormsg = _("验证码或邮箱错误")
+            return render(request,'forget_pwd.html',locals())
+
 
 
 # 发送电子邮箱验证码
@@ -234,14 +241,15 @@ def send_email_vcode(request):
                     verification_code=vcode_str,
                     expire_time=expire_time
                 )
-                return JsonResponse({'status': True, 'data': '发送成功'})
+                return JsonResponse({'status':True,'data':_('发送成功')})
             else:
-                return JsonResponse({'status': False, 'data': '发送验证码出错，请重试！'})
+                return JsonResponse({'status':False,'data':_('发送验证码出错，请重试！')})
 
         else:
-            return JsonResponse({'status': False, 'data': '电子邮箱不存在！'})
+            return JsonResponse({'status':False,'data':_('电子邮箱不存在！')})
     else:
-        return JsonResponse({'status': False, 'data': '方法错误'})
+        return JsonResponse({'status':False,'data':_('方法错误')})
+
 
 
 # 后台管理 - 仪表盘
@@ -310,7 +318,7 @@ def admin_user(request):
             table_data.append(item)
         return JsonResponse({'code':0,'data':table_data,"count": user_data.count()})
     else:
-        return JsonResponse({'code':1,'msg':'方法错误'})
+        return JsonResponse({'code':1,'msg':_('方法错误')})
 
 
 # 后台管理 - 创建用户
@@ -325,11 +333,11 @@ def admin_create_user(request):
         if username != '' and password != '' and email != '' and \
                 '@' in email and re.match(r'^[0-9a-z]', username) and len(username) >= 5:
             # 不允许电子邮箱重复
-            if User.objects.filter(email=email).count() > 0:
-                return JsonResponse({'status': False, 'data': '电子邮箱不可重复'})
+            if User.objects.filter(email = email).count() > 0:
+                return JsonResponse({'status':False,'data':_('电子邮箱不可重复')})
             # 不允许重复的用户名
-            if User.objects.filter(username=username).count() > 0:
-                return JsonResponse({'status': False, 'data': '用户名不可重复'})
+            if User.objects.filter(username = username).count() > 0:
+                return JsonResponse({'status': False,'data':_('用户名不可重复')})
             try:
                 if user_type == 0:
                     user = User.objects.create_user(
@@ -347,11 +355,11 @@ def admin_create_user(request):
                     user.save()
                 return JsonResponse({'status': True})
             except Exception as e:
-                return JsonResponse({'status': False, 'data': '系统异常'})
+                return JsonResponse({'status':False,'data':_('系统异常')})
         else:
-            return JsonResponse({'status': False, 'data': '请检查参数'})
+            return JsonResponse({'status':False,'data':_('请检查参数')})
     else:
-        return HttpResponse('方法不允许')
+        return HttpResponse(_('方法不允许'))
 
 
 # 后台管理 - 修改密码
@@ -368,16 +376,17 @@ def admin_change_pwd(request):
                     user = User.objects.get(id=int(user_id))
                     user.set_password(password)
                     user.save()
-                    return JsonResponse({'status': True, 'data': '修改成功'})
+                    return JsonResponse({'status':True,'data':_('修改成功')})
                 else:
-                    return JsonResponse({'status': False, 'data': '两个密码不一致'})
+                    return JsonResponse({'status':False,'data':_('两个密码不一致')})
             else:
-                return JsonResponse({'status': False, 'data': '参数错误'})
+                return JsonResponse({'status':False,'data':_('参数错误')})
         except Exception as e:
             print(repr(e))
-            return JsonResponse({'status': False, 'data': '请求错误'})
+            return JsonResponse({'status':False,'data':_('请求错误')})
     else:
-        return JsonResponse({'status': False, 'data': '方法错误'})
+        return JsonResponse({'status':False,'data':_('方法错误')})
+
 
 
 # 后台管理 - 删除用户
@@ -396,11 +405,11 @@ def admin_del_user(request):
                     top_doc=colloa.project.id, create_user=user
                 ).update(create_user=colloa.project.create_user)
             user.delete()
-            return JsonResponse({'status': True, 'data': '删除成功'})
+            return JsonResponse({'status':True,'data':_('删除成功')})
         except Exception as e:
-            return JsonResponse({'status': False, 'data': '删除出错'})
+            return JsonResponse({'status':False,'data':_('删除出错')})
     else:
-        return JsonResponse({'status': False, 'data': '方法错误'})
+        return JsonResponse({'status':False,'data':_('方法错误')})
 
 
 # 后台管理 - 文集管理
@@ -501,8 +510,8 @@ def admin_project_istop(request):
         Project.objects.filter(id=project_id).update(is_top=is_top)
         return JsonResponse({'status': True})
     except:
-        logger.exception("置顶文集出错")
-        return JsonResponse({'status': False, 'data': '执行出错'})
+        logger.exception(_("置顶文集出错"))
+        return JsonResponse({'status':False,'data':_('执行出错')})
 
 
 # 后台管理 - 文档管理
@@ -665,7 +674,7 @@ def admin_register_code(request):
             try:
                 all_cnt = int(request.POST.get('all_cnt', 1))  # 注册码的最大使用次数
                 if all_cnt <= 0:
-                    return JsonResponse({'status': False, 'data': '最大使用次数不可为负数'})
+                    return JsonResponse({'status': False, 'data': _('最大使用次数不可为负数')})
                 is_code = False
                 while is_code is False:
                     code_str = '0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM'
@@ -681,24 +690,24 @@ def admin_register_code(request):
                     all_cnt=all_cnt,
                     create_user=request.user
                 )
-                return JsonResponse({'status': True, 'data': '新增成功'})
+                return JsonResponse({'status':True,'data':_('新增成功')})
             except Exception as e:
-                logger.exception("生成注册码异常")
-                return JsonResponse({'status': False, 'data': '系统异常'})
+                logger.exception(_("生成注册码异常"))
+                return JsonResponse({'status': False,'data':_('系统异常')})
         elif int(types) == 2:
             code_id = request.POST.get('code_id', None)
             try:
                 register_code = RegisterCode.objects.get(id=int(code_id))
                 register_code.delete()
-                return JsonResponse({'status': True, 'data': '删除成功'})
+                return JsonResponse({'status':True,'data':_('删除成功')})
             except ObjectDoesNotExist:
-                return JsonResponse({'status': False, 'data': '注册码不存在'})
+                return JsonResponse({'status':False,'data':_('注册码不存在')})
             except:
-                return JsonResponse({'status': False, 'data': '系统异常'})
+                return JsonResponse({'status':False,'data':_('系统异常')})
         else:
-            return JsonResponse({'status': False, 'data': '类型错误'})
+            return JsonResponse({'status':False,'data':_('类型错误')})
     else:
-        return JsonResponse({'status': False, 'data': '方法错误'})
+        return JsonResponse({'status': False,'data':_('方法错误')})
 
 
 # 普通用户修改密码
@@ -715,15 +724,15 @@ def change_pwd(request):
                     user = User.objects.get(id=request.user.id)
                     user.set_password(password)
                     user.save()
-                    return JsonResponse({'status': True, 'data': '修改成功'})
+                    return JsonResponse({'status':True,'data':_('修改成功')})
                 else:
-                    return JsonResponse({'status': False, 'data': '密码不得少于6位数'})
+                    return JsonResponse({'status':False,'data':_('密码不得少于6位数')})
             else:
-                return JsonResponse({'status': False, 'data': '两个密码不一致'})
+                return JsonResponse({'status':False,'data':_('两个密码不一致')})
         except Exception as e:
-            return JsonResponse({'status': False, 'data': '修改出错'})
+            return JsonResponse({'status':False,'data':_('修改出错')})
     else:
-        return HttpResponse('方法错误')
+        return HttpResponse(_('方法错误'))
 
 
 # 后台管理 - 应用设置
@@ -847,7 +856,8 @@ def admin_setting(request):
                 name = 'enable_login_check_code',
                 defaults={'value':enable_login_check_code,'types':'basic'}
             )
-            return render(request, 'app_admin/admin_setting.html', locals())
+
+            return render(request,'app_admin/admin_setting.html',locals())
         # 邮箱设置
         elif types == 'email':
             # 读取上传的参数
@@ -951,7 +961,7 @@ def admin_setting(request):
 
 # 检测版本更新
 def check_update(request):
-    url = 'https://gitee.com/api/v5/repos/zmister/MrDoc/tags'
+    url = 'https://gitee.com/api/v5/repos/msandrew/free-open-write/tags'
     resp = requests.get(url, timeout=5).json()
     return JsonResponse({'status': True, 'data': resp[-1]})
 
@@ -1047,49 +1057,49 @@ def admin_center_menu(request):
     menu_data = [
         {
             "id": 1,
-            "title": "仪表盘",
+            "title": _("仪表盘"),
             "type": 1,
             "icon": "layui-icon layui-icon-console",
             "href": reverse('admin_overview'),
         },
         {
             "id": 2,
-            "title": "文集管理",
+            "title": _("文集管理"),
             "type": 1,
             "icon": "layui-icon layui-icon-list",
             "href": reverse('project_manage'),
         },
         {
             "id": 3,
-            "title": "文档管理",
+            "title": _("文档管理"),
             "type": 1,
             "icon": "layui-icon layui-icon-form",
             "href": reverse('doc_manage'),
         },
         {
             "id": 4,
-            "title": "文档模板管理",
+            "title": _("文档模板管理"),
             "type": 1,
             "icon": "layui-icon layui-icon-templeate-1",
             "href": reverse('doctemp_manage'),
         },
         {
             "id": 5,
-            "title": "注册码管理",
+            "title": _("注册码管理"),
             "type": 1,
             "icon": "layui-icon layui-icon-component",
             "href": reverse('register_code_manage'),
         },
         {
             "id": 6,
-            "title": "用户管理",
+            "title": _("用户管理"),
             "type": 1,
             "icon": "layui-icon layui-icon-user",
             "href": reverse('user_manage'),
         },
         {
             "id": 7,
-            "title": "站点设置",
+            "title": _("站点设置"),
             "type": 1,
             "icon": "layui-icon layui-icon-set",
             "href": reverse('sys_setting'),
@@ -1117,20 +1127,20 @@ def admin_center_menu(request):
         # },
         {
             "id": "common",
-            "title": "使用帮助",
+            "title": _("使用帮助"),
             "icon": "layui-icon layui-icon-template-1",
             "type": 0,
             "href": "",
             "children": [{
                 "id": 701,
-                "title": "安装说明",
+                "title": _("安装说明"),
                 "icon": "layui-icon layui-icon-face-smile",
                 "type": 1,
                 "openType": "_blank",
                 "href": "http://mrdoc.zmister.com/project-7/"
             }, {
                 "id": 702,
-                "title": "使用说明",
+                "title": _("使用说明"),
                 "icon": "layui-icon layui-icon-face-smile",
                 "type": 1,
                 "openType": "_blank",

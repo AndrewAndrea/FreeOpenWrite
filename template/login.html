@@ -59,7 +59,7 @@
             <form class="layui-form" action="{% url 'login' %}"  method='POST'>
                 {% csrf_token %}
                 <div class="layui-form-item">
-                    <h2><strong>{% trans "登录" %} - <a href="/">{% if site_name != None %}{{site_name}} {% else %}{% trans "觅道文档" %}{% endif %}</a></strong></h2>
+                    <h2><strong>{% trans "登录" %} - <a href="/">{% if site_name != None %}{{site_name}} {% else %}{% trans "FreeOpenWrite" %}{% endif %}</a></strong></h2>
                 </div>
                 <span style='color:red;margin-bottom: 10px;'>{{ errormsg }}</span>
                 <div class="layui-form-item">

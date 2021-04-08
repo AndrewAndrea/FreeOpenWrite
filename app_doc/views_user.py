@@ -11,6 +11,10 @@ from django.http.response import JsonResponse
 from django.contrib.auth.decorators import login_required # 登录需求装饰器
 from django.core.paginator import Paginator,PageNotAnInteger,EmptyPage,InvalidPage # 后端分页
 from django.core.exceptions import PermissionDenied,ObjectDoesNotExist
+from django.utils.translation import gettext_lazy as _
+from app_doc.models import Project,Doc,DocTemp
+from django.contrib.auth.models import User
+
 from django.db.models import Q
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -73,7 +77,7 @@ def cookie_manage(request):
                 if plant:
                     is_true = CookiePlant.objects.filter(plant=plant[0], create_user=request.user)
                     if is_true:
-                        return JsonResponse({'status': False, 'data': '新增失败！当前不支持同平台多账号！'})
+                        return JsonResponse({'status': False, 'data': f'新增失败！<b>{plant[0].plant_name}</b> cookie已存在！'})
                     # 创建一个 cookie
                     CookiePlant.objects.create(
                         cookie=plant_cookie,
@@ -81,20 +85,61 @@ def cookie_manage(request):
                         status=1,
                         create_user=request.user
                     )
-                    return JsonResponse({'status': True, 'data': '新增成功'})
+                    return JsonResponse({'status': True, 'data': f'<b>{plant[0].plant_name}</b> cookie新增成功'})
                 else:
-                    return JsonResponse({'status': False, 'data': '新增失败！当前平台不可用！'})
+                    return JsonResponse({'status': False, 'data': f'<b>{plant[0].plant_name}</b>新增失败！当前平台不可用！'})
             except Exception as e:
                 logger.exception("新增发布平台异常")
                 return JsonResponse({'status': False, 'data': '系统异常'})
         elif int(types) == 2:  # 更新 cookie
             code_id = request.POST.get('code_id', None)
-            cookie = request.POST.get('cookie')
+            cookie = request.POST.get('cookie', None)
+            plant_id = request.POST.get('plant_id', None)  # 平台id
+            if not cookie:
+                return JsonResponse({'status': False, 'data': '更新失败！'})
             try:
-
-                CookiePlant.objects.filter(id=int(code_id)).update(status=1, cookie=cookie)
+                if plant_id:
+                    plant_result = Plant.objects.filter(id=int(plant_id), status=1)
+                    CookiePlant.objects.filter(plant=plant_result[0], create_user=request.user).update(status=1,
+                                                                                                       cookie=cookie)
+                    plant_name = plant_result[0].plant_name
+                else:
+                    cookie_result = CookiePlant.objects.filter(id=int(code_id))
+                    cookie_result.update(status=1, cookie=cookie)
+                    plant_name = cookie_result[0].plant.plant_name
                 # print(register_code)
-                return JsonResponse({'status': True, 'data': '操作成功'})
+                return JsonResponse({'status': True, 'data': f'<b>{plant_name}</b> cookie 更新成功！'})
+            except ObjectDoesNotExist:
+                return JsonResponse({'status': False, 'data': '当前平台不存在'})
+            except:
+                print(traceback.format_exc())
+                return JsonResponse({'status': False, 'data': '系统异常'})
+        elif int(types) == 3:  # 当前cookie 存在则更新，不存在则添加
+            cookie = request.POST.get('cookie', None)
+            plant_id = request.POST.get('plant_id', None)  # 平台id
+            if not plant_id:
+                return JsonResponse({'status': False, 'data': '异常请求！'})
+            try:
+                plant_result = Plant.objects.filter(id=int(plant_id), status=1)
+                is_cookie = CookiePlant.objects.filter(plant=plant_result[0], create_user=request.user)
+                if not cookie:
+                    return JsonResponse({'status': False, 'data': f'<b>{plant_result[0].plant_name}</b> 没有登陆哦！'})
+                if is_cookie:
+
+                    is_cookie.update(status=1, cookie=cookie)
+                else:
+                    # 创建一个 cookie
+                    CookiePlant.objects.create(
+                        cookie=cookie,
+                        plant=plant_result[0],
+                        status=1,
+                        create_user=request.user
+                    )
+
+                plant_name = plant_result[0].plant_name
+
+                # print(register_code)
+                return JsonResponse({'status': True, 'data': f'<b>{plant_name}</b> cookie 获取成功！'})
             except ObjectDoesNotExist:
                 return JsonResponse({'status': False, 'data': '当前平台不存在'})
             except:
@@ -294,21 +339,21 @@ def user_center_menu(request):
     menu_data = [
         {
             "id": 1,
-            "title": "仪表盘",
+            "title": _("仪表盘"),
             "type": 1,
             "icon": "layui-icon layui-icon-console",
             "href": reverse('manage_overview'),
         },
         {
             "id": "my_plant_manage",
-            "title": "渠道分发",
+            "title": _("渠道分发"),
             "icon": "layui-icon layui-icon-component",
             "type": 0,
             "href": "",
             "children": [
                 {
                     "id": "doc_cookie_manage",
-                    "title": "文章分发",
+                    "title": _("文章分发"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -316,7 +361,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "doc_publish_manage",
-                    "title": "分发数据",
+                    "title": _("分发数据"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -324,7 +369,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "plant_config_manage",
-                    "title": "渠道配置",
+                    "title": _("渠道配置"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -332,7 +377,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "bottom_template_manage",
-                    "title": "底部模板",
+                    "title": _("底部模板"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -340,7 +385,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "drawing_bed_setting",
-                    "title": "图床配置",
+                    "title": _("图床配置"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -350,14 +395,14 @@ def user_center_menu(request):
         },
         {
             "id": "my_project",
-            "title": "我的文集",
+            "title": _("我的文集"),
             "icon": "layui-icon layui-icon-component",
             "type": 0,
             "href": "",
             "children": [
                 {
                     "id": "manage_project",
-                    "title": "文集管理",
+                    "title": _("文集管理"),
                     "icon": "layui-icon layui-icon-console",
                     "type": 1,
                     "openType": "_iframe",
@@ -365,7 +410,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "manage_colla_self",
-                    "title": "我的协作",
+                    "title": _("我的协作"),
                     "icon": "layui-icon layui-icon-console",
                     "type": 1,
                     "openType": "_iframe",
@@ -373,7 +418,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "import_project",
-                    "title": "导入文集",
+                    "title": _("导入文集"),
                     "icon": "layui-icon layui-icon-console",
                     "type": 1,
                     "openType": "_iframe",
@@ -383,14 +428,14 @@ def user_center_menu(request):
         },
         {
             "id": "my_doc",
-            "title": "我的文档",
+            "title": _("我的文档"),
             "icon": "layui-icon layui-icon-file-b",
             "type": 0,
             "href": "",
             "children": [
                 {
                     "id": "doc_manage",
-                    "title": "文档管理",
+                    "title": _("文档管理"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -398,7 +443,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "doc_template",
-                    "title": "文档模板",
+                    "title": _("文档模板"),
                     "icon": "layui-icon layui-icon-face-cry",
                     "type": 1,
                     "openType": "_iframe",
@@ -406,7 +451,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "doc_tag",
-                    "title": "文档标签",
+                    "title": _("文档标签"),
                     "icon": "layui-icon layui-icon-face-cry",
                     "type": 1,
                     "openType": "_iframe",
@@ -414,7 +459,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "doc_share",
-                    "title": "我的分享",
+                    "title": _("我的分享"),
                     "icon": "layui-icon layui-icon-face-cry",
                     "type": 1,
                     "openType": "_iframe",
@@ -422,7 +467,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "doc_recycle",
-                    "title": "文档回收站",
+                    "title": _("文档回收站"),
                     "icon": "layui-icon layui-icon-face-cry",
                     "type": 1,
                     "openType": "_iframe",
@@ -432,14 +477,14 @@ def user_center_menu(request):
         },
         {
             "id": "my_fodder",
-            "title": "我的素材",
+            "title": _("我的素材"),
             "icon": "layui-icon layui-icon-upload-drag",
             "type": 0,
             "href": "",
             "children": [
                 {
                     "id": "my_img",
-                    "title": "我的图片",
+                    "title": _("我的图片"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -447,7 +492,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": "my_attachment",
-                    "title": "我的附件",
+                    "title": _("我的附件"),
                     "icon": "layui-icon layui-icon-face-cry",
                     "type": 1,
                     "openType": "_iframe",
@@ -457,7 +502,7 @@ def user_center_menu(request):
         },
         {
             "id": "my_collect",
-            "title": "我的收藏",
+            "title": _("我的收藏"),
             "icon": "layui-icon layui-icon-star",
             "type": 1,
             "openType": "_iframe",
@@ -465,14 +510,14 @@ def user_center_menu(request):
         },
         {
             "id": "self_settings",
-            "title": "个人管理",
+            "title": _("个人管理"),
             "icon": "layui-icon layui-icon-set-fill",
             "type": 0,
             "href": "",
             "children": [
                 {
                     "id": 601,
-                    "title": "个人设置",
+                    "title": _("个人设置"),
                     "icon": "layui-icon layui-icon-face-smile",
                     "type": 1,
                     "openType": "_iframe",
@@ -480,7 +525,7 @@ def user_center_menu(request):
                 },
                 {
                     "id": 602,
-                    "title": "Token管理",
+                    "title": _("Token管理"),
                     "icon": "layui-icon layui-icon-face-cry",
                     "type": 1,
                     "openType": "_iframe",
@@ -490,7 +535,7 @@ def user_center_menu(request):
         },
         {
             "id": "user_manual",
-            "title": "使用手册",
+            "title": _("使用手册"),
             "icon": "layui-icon layui-icon-template-1",
             "type": 1,
             "openType": "_blank",

@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
-from configparser import ConfigParser
+from configparser import ConfigParser,RawConfigParser
 from loguru import logger
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -40,7 +40,7 @@ SECRET_KEY = '5&71mt9@^58zdg*_!t(x6g14q*@84d%ptr%%s6e0l50zs0we3d'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = CONFIG.getboolean('site','debug')
 
-VERSIONS = '0.6.5'
+VERSIONS = '0.1.0'
 
 ALLOWED_HOSTS = ['*']
 
@@ -113,7 +113,8 @@ DATABASE_MAP = {
     'oracle':'django.db.backends.oracle',
 }
 
-if CONFIG['database']['engine'] == 'sqlite':
+db_engine = CONFIG.get('database','engine',fallback='sqlite')
+if db_engine == 'sqlite':
     DATABASES = {
         'default': {
             'ENGINE': DATABASE_MAP[CONFIG['database']['engine']],
@@ -158,9 +159,9 @@ LOGIN_URL = 'login'
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
-LANGUAGE_CODE = 'zh-hans'
+LANGUAGE_CODE = CONFIG.get('locale','language',fallback='zh-hans')
 
-TIME_ZONE = 'Asia/Shanghai'
+TIME_ZONE = CONFIG.get('local','timezone', fallback='Asia/Shanghai')
 
 USE_I18N = True
 
@@ -218,11 +219,22 @@ HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_CUSTOM_HIGHLIGHTER = "app_doc.search.highlight.MyHighLighter"
 
 # Selenium 调用的driver类型 默认为Chromium
+CHROMIUM_DRIVER = CONFIG.get('selenium','driver',fallback='CHROMIUM')
+CHROMIUM_DRIVER_PATH = CONFIG.get('selenium','driver_path',fallback=None)
+
+INTERNAL_IPS = ('127.0.0.1', '::1')
+# Django Debug Toolbar 工具，站点开启调试的时候启用
 try:
-    CHROMIUM_DRIVER = CONFIG['selenium']['driver']
-except:
-    CHROMIUM_DRIVER = 'CHROMIUM'
-if 'driver_path' in CONFIG['selenium'].keys():
-    CHROMIUM_DRIVER_PATH = CONFIG['selenium']['driver_path']
-else:
-    CHROMIUM_DRIVER_PATH = None
+    import debug_toolbar.settings  # noqa
+    if DEBUG:
+        INSTALLED_APPS.append('debug_toolbar.apps.DebugToolbarConfig')
+        MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+        DEBUG_TOOLBAR_PATCH_SETTINGS = False
+        DEBUG_TOOLBAR_CONFIG = {
+            'JQUERY_URL': '',
+            'DISABLE_PANELS': debug_toolbar.settings.PANELS_DEFAULTS,
+        }
+
+    pass
+except ImportError:
+    pass

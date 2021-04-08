@@ -18,7 +18,9 @@
                         <!--<input type="text" name="kw" id="kw" placeholder="输入文集内容" autocomplete="off" class="layui-input">-->
                         <!--</div>-->
                         <!--<button class="layui-btn layui-btn-normal" type="submit">搜索</button>-->
-
+                        <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="getPlugPlantCookie()"
+                                type="button"><i class="layui-icon layui-icon-addition"></i>插件获取发布平台 cookie
+                        </button>
                         <button class="layui-btn layui-btn-normal layui-btn-sm" onclick="createRegisterCode()"
                                 type="button"><i class="layui-icon layui-icon-addition"></i>新增发布平台 cookie
                         </button>
@@ -144,9 +146,10 @@
         {{# } }}
         {% endverbatim %}
     </script>
-    {#    <script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>#}
-    {#    <script src="{% static 'publish_freeow/publish_art.js' %}"></script>#}
+{#    <script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>#}
+
     <script>
+
         layui.use(['table', 'jquery', 'form', 'layer', 'element'], function () {
             let table = layui.table;
             let form = layui.form;
@@ -407,7 +410,10 @@
                     },
                 });
             }
-
         })
     </script>
+    <script src="{% static 'jquery/3.1.1/jquery.min.js' %}"></script>
+
+{#    <script src="{% static 'publish_freeow/chrome.js' %}"></script>#}
+    <script src="{% static 'publish_freeow/index.js' %}"></script>
 {% endblock %}
