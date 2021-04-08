@@ -233,8 +233,8 @@ class ImageGroup(models.Model):
 # 图片模型
 class Image(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    file_path = models.CharField(verbose_name="图片路径", max_length=250)
-    file_name = models.CharField(verbose_name="图片名称", max_length=250, null=True, blank=True)
+    file_path = models.CharField(verbose_name="图片路径", max_length=250, unique=True)
+    file_name = models.CharField(verbose_name="图片名称", max_length=250, null=True, blank=True, unique=True)
     group = models.ForeignKey(ImageGroup, on_delete=models.SET_NULL, null=True, verbose_name="图片分组")
     remark = models.CharField(verbose_name="图片备注", null=True, blank=True, max_length=250, default="图片描述")
     create_time = models.DateTimeField(verbose_name='创建时间', auto_now_add=True)

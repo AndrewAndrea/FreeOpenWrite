@@ -1,5 +1,5 @@
 # coding:utf-8
-import datetime,time,json,base64,os,uuid
+import datetime,time,json,base64,os,uuid, traceback
 from app_doc.models import Image, ImageGroup, Attachment, DrawingBedSetting
 
 from app_admin.models import SysSetting
@@ -45,6 +45,13 @@ def upload_ice_img(request):
             result = ice_save_file(request, file_obj, request.user, bed_default_types)
             res_dic[i] = result
     elif iceEditor_img.lower().startswith('http'):
+        check_url_file_name = iceEditor_img.lower().rsplit('/', 1)[1]
+        image_result_name = Image.objects.filter(file_name=check_url_file_name)
+        if image_result_name:
+            return {"error": 0, "name": image_result_name[0].file_name, 'url': image_result_name[0].file_path}
+        image_result = Image.objects.filter(file_path=iceEditor_img.lower())
+        if image_result:
+            return {"error": 0, "name": image_result[0].file_name, 'url': image_result[0].file_path}
         res_dic = ice_url_img_upload(request, iceEditor_img, request.user, bed_default_types)
     else:
         # 粘贴上传和单文件上传
@@ -130,12 +137,12 @@ def ice_url_img_upload(request, url, user, bed_default_types):
         else:
             with open(path_file, 'wb') as f:
                 f.write(r.content)  # 保存文件
-            Image.objects.create(
-                user=user,
-                file_path=file_url,
-                file_name=file_name,
-                remark=_('iceurl粘贴上传'),
-            )
+        Image.objects.create(
+            user=user,
+            file_path=file_url,
+            file_name=file_name,
+            remark=_('iceurl粘贴上传'),
+        )
     resp_data = {"error": 0, "name": file_name, 'url': file_url}
     return resp_data
 
@@ -147,7 +154,6 @@ def upload_img(request):
     # {"success": 0, "message": "出错信息"}
     # {"success": 1, "url": "图片地址"}
     ##################
-
     dbs = DrawingBedSetting.objects.filter(name__contains="default_types", value__isnull=False, create_user=request.user)
     bed_default_types = None
     if dbs.count() != 0:
@@ -185,6 +191,13 @@ def upload_img(request):
         if url_img.startswith("data:image"):  # 以URL形式上传的BASE64编码图片
             result = base_img_upload(request, url_img, dir_name, request.user, bed_default_types)
         else:
+            check_url_file_name = url_img.rsplit('/', 1)[1]
+            image_result_name = Image.objects.filter(file_name=check_url_file_name)
+            if image_result_name:
+                return {"error": 0, "name": image_result_name[0].file_name, 'url': image_result_name[0].file_path}
+            image_result = Image.objects.filter(file_path=url_img)
+            if image_result:
+                return {"error": 0, "name": image_result[0].file_name, 'url': image_result[0].file_path}
             result = url_img_upload(request, url_img, dir_name, request.user, bed_default_types)
     else:
         result = {"success": 0, "message": _("上传出错")}
@@ -266,7 +279,7 @@ def base_img_upload(request, files, dir_name, user, bed_default_types):
         user=user,
         file_path=file_url,
         file_name=file_name,
-        remark = _('粘贴上传'),
+        remark=_('粘贴上传'),
     )
     return {"success": 1, "url": file_url, 'message': _('上传图片成功')}
 
@@ -274,7 +287,8 @@ def base_img_upload(request, files, dir_name, user, bed_default_types):
 # url图片上传
 def url_img_upload(request, url, dir_name, user, bed_default_types):
     relative_path = upload_generation_dir(dir_name)
-    file_name = str(datetime.datetime.today()).replace(':', '').replace(' ', '_').split('.')[0] + '.png'  # 日期时间
+    name_rand = "".join(random.sample('zyxwvutsrqponmlkjihgfedcba', 10))
+    file_name = str(datetime.datetime.today()).replace(':', '').replace(' ', '_').split('.')[0] + f'{name_rand}.png'  # 日期时间
     path_file = os.path.join(relative_path, file_name)
     path_file = settings.MEDIA_ROOT + path_file
     # print('文件路径：', path_file)
