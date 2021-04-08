@@ -48,10 +48,10 @@ def upload_ice_img(request):
         check_url_file_name = iceEditor_img.lower().rsplit('/', 1)[1]
         image_result_name = Image.objects.filter(file_name=check_url_file_name)
         if image_result_name:
-            return {"error": 0, "name": image_result_name[0].file_name, 'url': image_result_name[0].file_path}
+            return JsonResponse({"error": 0, "name": image_result_name[0].file_name, 'url': image_result_name[0].file_path})
         image_result = Image.objects.filter(file_path=iceEditor_img.lower())
         if image_result:
-            return {"error": 0, "name": image_result[0].file_name, 'url': image_result[0].file_path}
+            return JsonResponse({"error": 0, "name": image_result[0].file_name, 'url': image_result[0].file_path})
         res_dic = ice_url_img_upload(request, iceEditor_img, request.user, bed_default_types)
     else:
         # 粘贴上传和单文件上传
@@ -194,14 +194,31 @@ def upload_img(request):
             check_url_file_name = url_img.rsplit('/', 1)[1]
             image_result_name = Image.objects.filter(file_name=check_url_file_name)
             if image_result_name:
-                return {"error": 0, "name": image_result_name[0].file_name, 'url': image_result_name[0].file_path}
+                resp_data = {
+                    'msg': '',
+                    'code': 0,
+                    'data': {
+                        'originalURL': url_img,
+                        'url': image_result_name[0].file_path
+                    }
+                }
+                return JsonResponse(resp_data)
             image_result = Image.objects.filter(file_path=url_img)
             if image_result:
-                return {"error": 0, "name": image_result[0].file_name, 'url': image_result[0].file_path}
+                resp_data = {
+                    'msg': '',
+                    'code': 0,
+                    'data': {
+                        'originalURL': url_img,
+                        'url': image_result[0].file_path
+                    }
+                }
+                return JsonResponse(resp_data)
             result = url_img_upload(request, url_img, dir_name, request.user, bed_default_types)
     else:
         result = {"success": 0, "message": _("上传出错")}
     return JsonResponse(result)
+
 
 # 目录创建
 def upload_generation_dir(dir_name=''):
