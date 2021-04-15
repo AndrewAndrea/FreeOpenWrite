@@ -270,7 +270,7 @@
                             if (plant_name === 'CSDN' || plant_name === '思否' || plant_name === '知乎' || plant_name === '掘金') {
                                 layer.open({
                                     type: 1,
-                                    title: '请输入文章标签',
+                                    title: '请输入文章标签，此处的文章标签会覆盖已配置的文章标签，可以为空',
                                     area: '300px;',
                                     id: 'createRegCode',//配置ID
                                     content: '<div style="margin:10px;"><input class="layui-input" id="tags" type="text" placeholder="请输入文章标签，以英文逗号隔开"/></div>',
@@ -307,15 +307,13 @@
                             if (r.status) {
                                 {#layer.msg(result_str, {icon: 1, time: 10000});#}
                                 layer.msg(r.data, {icon: 1, time: 3000}, function () {
-                                    window.location.reload();
+                                    window.location.href = '/doc_publish_manage';
                                 });
-                                //删除成功，刷新页面
-                                {#window.location.reload();#}
-                                //layer.close(index)
                             } else {
                                 //删除失败，提示
-                                console.log(r)
-                                layer.msg(r.data)
+                                layer.msg(r.data, {icon: 2, time: 3000}, function () {
+                                    window.location.reload();
+                                });
                             }
                         })
                     },
@@ -362,7 +360,7 @@
                             doc_id = obj.data.id;
                             layer.open({
                                 type: 1,
-                                title: '请输入文章标签：',
+                                title: '请输入文章标签，此处的标签会覆盖已配置的标签，可以不填',
                                 area: '300px;',
                                 id: 'createRegCode',//配置ID
                                 content: '<div style="margin:10px;"><input class="layui-input" id="tags" type="text" placeholder="请输入文章标签，以英文逗号隔开"/></div>',
@@ -395,16 +393,13 @@
                                 for (var item in r.result){
                                     result_str += r.result[item] + '</br>';
                                 }
-                                layer.msg(result_str, {icon: 1, time: 3000});
-                                {#window.location.href = '/doc_publish_manage'#}
-
-                                //删除成功，刷新页面
-                                {#window.location.reload();#}
-                                //layer.close(index)
+                                 layer.msg(result_str, {icon: 1, time: 3000}, function () {
+                                    window.location.href = '/doc_publish_manage';
+                                });
                             } else {
-                                //删除失败，提示
-                                {#console.log(r)#}
-                                layer.msg(r.result)
+                                layer.msg(r.data, {icon: 2, time: 3000}, function (){
+                                    window.location.reload()
+                                });
                             }
                         })
                     },

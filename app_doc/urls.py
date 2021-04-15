@@ -83,8 +83,10 @@ urlpatterns = [
     path('cookie_manage/', views_user.cookie_manage, name="cookie_manage"),  # cookie管理
     path('plant_config_manage/', views_doc_pub.plant_config_manage, name="plant_config_manage"),  # 查看配置
     path('add_plant_config/', views_doc_pub.add_plant_config, name="add_plant_config"),  # 添加配置
+    path('add_note_book/', views_doc_pub.add_note_book, name="add_note_book"),  # 新增简书文集
     path('plant_config_html/<int:config_id>/', views_doc_pub.plant_config_html, name="plant_config_html"),  # 添加配置页面
     path('api_plant_config/', views_doc_pub.api_plant_config, name="api_plant_config"),  # 获取相关渠道的分类标签数据
+
     path('article_distribution/', views_user.article_distribution, name="article_distribution"),  # 文章分发
 
     path('drawing_bed_setting/', views_doc_pub.drawing_bed_setting, name="drawing_bed_setting"),  # 发布平台管理

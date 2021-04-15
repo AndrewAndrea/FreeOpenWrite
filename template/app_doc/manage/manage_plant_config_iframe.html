@@ -7,7 +7,7 @@
         <div class="layui-card-header">{% trans "新增配置" %}</div>
         <div class="layui-card-body">
             <form class="layui-form" lay-filter="form_add">
-            {% csrf_token %}
+                {% csrf_token %}
                 <input type="text" name="plant_config" hidden value="{{ plant_config.id }}">
                 <div class="layui-form-item" id="plant_config">
                     <label class="layui-form-label">{% trans "渠道" %}</label>
@@ -35,6 +35,7 @@
                                placeholder="请输入文章来源" class="layui-input">
                     </div>
                 </div>
+
                 <div class="layui-form-item" id="art_category" style="display: none">
                     <label class="layui-form-label">文章分类</label>
                     <div class="layui-input-inline" id="category">
@@ -59,7 +60,7 @@
                     <div class="layui-input-block">
                         <input type="radio" name="art_pub_type" value="1" title="公开">
                         <input type="radio" name="art_pub_type" value="2" title="私密">
-{#                        <input type="radio" name="art_pub_type" value="3" title="粉丝可见">#}
+                        {#                        <input type="radio" name="art_pub_type" value="3" title="粉丝可见">#}
                         <input type="radio" name="art_pub_type" value="3" title="VIP可见">
                     </div>
                 </div>
@@ -68,6 +69,15 @@
                     <div class="tags" id="tags">
                         <input type="text" name="inputTags" id="inputTags" placeholder="回车生成标签" autocomplete="off">
                     </div>
+                </div>
+
+                <div class="layui-form-item" id="add_jianshu_notebooks" style="display: none">
+                    <label class="layui-form-label">文集新增</label>
+                    <div class="layui-input-inline" style="width: 420px">
+                        <input type="text" id="add_notebooks" lay-verify="add_jianshu_notebooks" autocomplete="off"
+                               placeholder="如需新增，请输入文集名称后点击新增按钮；不需新增为空即可" class="layui-input">
+                    </div>
+                     <button type="button" class="layui-btn" onclick="addNoteBooks()">新增</button>
                 </div>
                 <div class="layui-form-item">
                     <div class="layui-input-block">
@@ -86,12 +96,13 @@
     <script src="/static/jquery/3.1.1/jquery.min.js"></script>
     <script>
         {#new Function($('.run').text())()#}
-        layui.use(['form', 'inputTags'], function () {
+        layui.use(['form', 'inputTags', 'layer'], function () {
             let art_category_name = '';
             let art_sub_category_name = '';
             let plant_value = '';
             let tags = '';
             let inputTags = layui.inputTags;
+            let layer = layui.layer;
             $.ajaxSetup({
                 data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
             });
@@ -112,6 +123,7 @@
             var form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
             form.on('select(plant)', function (data) {
                 plant_value = data.value;
+                $("#add_jianshu_notebooks").hide();
                 if (plant_value === "CSDN" || plant_value === '思否') {
                     $("#art_type").show();
 
@@ -127,7 +139,7 @@
                     }
 
                     $("#art_tags").show();
-                } else if (plant_value === '博客园'  || plant_value === '掘金') {
+                } else if (plant_value === '博客园' || plant_value === '掘金') {
                     $("#art_category").show();
                     $("#sub_category").hide();
                     $("#art_tags").show();
@@ -135,21 +147,21 @@
                     $("#art_pub_type").hide();
                     $("#art_source_url").hide();
                     getCategory(plant_value, 'category');
-                }else if (plant_value === '知乎'){
+                } else if (plant_value === '知乎') {
                     $("#art_tags").show();
                     $("#art_type").hide();
                     $("#art_pub_type").hide();
                     $("#art_source_url").hide();
-                     $("#art_category").hide();
-                }
-                else if (plant_value === '简书'){
+                    $("#art_category").hide();
+                } else if (plant_value === '简书') {
                     $("#art_tags").hide();
                     $("#art_type").hide();
                     $("#art_pub_type").hide();
                     $("#art_source_url").hide();
-                   $("#art_category").show();
-                   $("#sub_category").hide();
-                   getCategory(plant_value, 'category');
+                    $("#art_category").show();
+                    $("#sub_category").hide();
+                    $("#add_jianshu_notebooks").show();
+                    getCategory(plant_value, 'category');
                 }
             });
             form.on('radio(art_type)', function (data_radio) {
@@ -167,8 +179,8 @@
                     'p_category': p_category
                 }
                 obj = document.getElementById("category_select");
-                for(i=obj.options.length-1;i>0;i--){
-                    obj.options[i]=null;
+                for (i = obj.options.length - 1; i > 0; i--) {
+                    obj.options[i] = null;
                 }
                 $.post("{% url 'api_plant_config' %}", request_data, function (r) {
                     if (r.status) {
@@ -176,22 +188,20 @@
                         let category_list = r.data;
 
                         for (let i = 0; i < category_list.length; i++) {
-                            console.log(plant_value);
-                            console.log(category_list[i]);
-                            if (plant_value === 'CSDN'){
+                            if (plant_value === 'CSDN') {
                                 let option_value = category_list[i];
                                 let option_name = category_list[i];
                                 str_option += "<option value=" + option_value + ">" + option_name + "</option>"
 
-                            }else if(plant_value === '博客园'){
+                            } else if (plant_value === '博客园') {
                                 let option_value = category_list[i]['categoryId'];
                                 let option_name = category_list[i]['title'];
                                 str_option += "<option value=" + option_value + ">" + option_name + "</option>"
-                            }else if(plant_value === '掘金'){
+                            } else if (plant_value === '掘金') {
                                 let option_value = category_list[i]['category']['category_id'];
                                 let option_name = category_list[i]['category']['category_name'];
                                 str_option += "<option value=" + option_value + ">" + option_name + "</option>"
-                            }else if(plant_value === '简书'){
+                            } else if (plant_value === '简书') {
                                 let option_value = category_list[i]['id'];
                                 let option_name = category_list[i]['name'];
                                 str_option += "<option value=" + option_value + ">" + option_name + "</option>"
@@ -208,20 +218,16 @@
             layui.$('#formbtn').on('click', function () {
 
                 var data = form.val('form_add');
-                console.log(data)
-                var myselect=document.getElementById("category_select");
-                var sub_select=document.getElementById("sub_category_select");
-               //2：拿到选中项的索引：
-               var index=myselect.selectedIndex ; // selectedIndex代表的是你所选中项的index
-               var sub_index=sub_select.selectedIndex ; // selectedIndex代表的是你所选中项的index
-               //4:拿到选中项options的text：
-               console.log(myselect.options[index].text);
+                var myselect = document.getElementById("category_select");
+                var sub_select = document.getElementById("sub_category_select");
+                //2：拿到选中项的索引：
+                var index = myselect.selectedIndex; // selectedIndex代表的是你所选中项的index
+                var sub_index = sub_select.selectedIndex; // selectedIndex代表的是你所选中项的index
+                //4:拿到选中项options的text：
                 data['inputTags'] = tags;
                 data['csrfmiddlewaretoken'] = '{{ csrf_token }}';
                 data['category_name'] = myselect.options[index].text;
                 data['sub_category_name'] = sub_select.options[sub_index].text;
-                {#let json_data = JSON.stringify(data);#}
-                {#console.log(json_data);#}
                 $.ajax({
                     url: "{% url 'add_plant_config' %}",
                     async: false,
@@ -229,18 +235,43 @@
                     data: data,
                     success: function (data) {
                         layer.msg(data.data, function () {
-                            if (data.status === true){
+                            if (data.status === true) {
                                 var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
-                                parent.layer.close(index)
+                                parent.layer.close(index);
+                                window.location.reload();
                             }
 
                         })
                     },
                     error: function (data) {
-                        layer.msg(data.data)
+                        layer.msg(data.data, function () {
+                            window.location.reload();
+                        })
                     }
                 })
             });
+
+            addNoteBooks = function () {
+                let note_book_name = $("#add_notebooks").val();
+                data = {
+                    'note_book_name': note_book_name,
+                }
+                $.post("{% url 'add_note_book' %}", data, function (r) {
+                    if (r.status) {
+                        //新增成功，刷新页面
+                        layer.msg(JSON.stringify(r.data), {icon: 1, time: 3000}, function () {
+                            window.location.reload();
+                        })
+
+                        //layer.close(index)
+                    } else {
+                        //新增失败，提示
+                        layer.msg(r.data, {icon: 2, time: 3000}, function () {
+                            window.location.reload();
+                        })
+                    }
+                })
+            }
 
         });
         //var index = parent.layer.getFrameIndex(window.name);

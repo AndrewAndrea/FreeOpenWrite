@@ -249,7 +249,7 @@ def article_all_distribution(request):
             if pub_status == 1:
                 all_result[plant_name] = f'<b>{plant_name}</b> 渠道分发成功'
             else:
-                all_result[plant_name] = f'<b>{plant_name}</b> 渠道分发失败'
+                all_result[plant_name] = f'<b>{plant_name}</b> 渠道分发失败 <b>{result}</b>'
         return JsonResponse({'status': True, 'data': '发布已完成！', 'result': all_result})
 
     except ObjectDoesNotExist:
@@ -332,9 +332,12 @@ def pub_spider(plant_name, plant_cookie, **kwargs):
         result = jue_jin_pub.publish_content(tags=doc_tags, title=doc_name, markdowncontent=doc_content,
                                              plant_config=plant_config)
         r_json = json.loads(result)
-        article_id = r_json.get('data').get('article_id')
-        publish_url = 'https://juejin.cn/post/' + str(article_id)
-        pub_status = 1
+        if r_json.get('data'):
+            article_id = r_json.get('data').get('article_id')
+            publish_url = 'https://juejin.cn/post/' + str(article_id)
+            pub_status = 1
+        else:
+            pub_status = 0
 
     elif plant_name == '简书':
         jian_shu_pub = JianShuPublish(cookie=plant_cookie)
@@ -667,6 +670,24 @@ def api_plant_config(request):
                     return JsonResponse({'status': True, 'data': category_list})
 
         return render(request, 'app_doc/manage/manage_plant_config_iframe.html', locals())
+
+
+# 简书增加文集
+@login_required()
+@logger.catch()
+def add_note_book(request):
+    if request.method == 'POST':
+        note_book_name = request.POST.get('note_book_name', None)
+        cookie = CookiePlant.objects.filter(plant__plant_name="简书", create_user=request.user)
+        if not cookie:
+            return JsonResponse({'status': False, 'data': "没有当前平台的cookie"})
+        if note_book_name:
+            jian_shu_pub = JianShuPublish(cookie=cookie[0].cookie)
+            result = jian_shu_pub.add_notebooks(note_book_name)
+            return JsonResponse({'status': True, 'data': result})
+
+    return JsonResponse({'status': False, 'data': "新增简书文集失败"})
+
 
 
 

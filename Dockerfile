@@ -1,5 +1,5 @@
 FROM python:3.7-alpine
-LABEL maintainer="www.mrdoc.fun"
+LABEL maintainer="freeow.andreblog.cn"
 ENV PYTHONUNBUFFERED=0 \
     TZ=Asia/Shanghai \
     LISTEN_PORT=10086\

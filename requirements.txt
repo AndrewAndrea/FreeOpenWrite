@@ -44,3 +44,4 @@ webdriver-manager==3.3.0
 websockets==8.1
 Whoosh==2.7.4
 zipp==3.4.0
+requests-toolbelt==0.9.1

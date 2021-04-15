@@ -63,7 +63,7 @@ class JueJinPublish:
                      "cover_image": "",
                      "title": title,
                      # 简介 标题 100个字符
-                     "brief_content": "",
+                     "brief_content": markdowncontent[:100],
                      "edit_type": 10,
                      "html_content": "deprecated",
                      "mark_content": ""}

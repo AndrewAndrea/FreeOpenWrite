@@ -45,6 +45,7 @@ class JianShuPublish:
     def add_notebooks(self, name):
         url = 'https://www.jianshu.com/author/notebooks'
         res = self.sess.post(url, json={"name": name})
+        print(res.text)
         if res.text:
             return res.json()
         return False
